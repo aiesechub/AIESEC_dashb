@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ff5800;
+      }
+
+      .cls-2 {
+        fill: #ffbc00;
+      }
+
+      .cls-3 {
+        fill: #ff0006;
+      }
+    </style>
+  </defs>
+  <g id="Tarsier_2" data-name="Tarsier 2">
+    <g>
+      <g>
+        <rect class="cls-1" x="0" y="0" width="269.76" height="269.76" transform="translate(269.76 269.76) rotate(-180)"/>
+        <polygon class="cls-2" points="233.11 36.65 269.76 73.3 269.76 0 196.46 0 233.11 36.65"/>
+        <polygon class="cls-2" points="36.65 233.11 0 196.46 0 269.76 73.3 269.76 36.65 233.11"/>
+      </g>
+      <g>
+        <circle class="cls-2" cx="132.52" cy="134.88" r="88.25"/>
+        <path class="cls-3" d="m220.77,134.88c0,48.74-39.51,88.25-88.25,88.25s-88.25-39.51-88.25-88.25h176.5Z"/>
+      </g>
+    </g>
+  </g>
+</svg>

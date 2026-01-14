@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-3 {
+        fill: #00b0f4;
+      }
+
+      .cls-4 {
+        fill: #0067f7;
+      }
+
+      .cls-5 {
+        fill: #0078f6;
+      }
+
+      .cls-6 {
+        fill: #009af5;
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-1" width="269.76" height="269.76"/>
+    </clipPath>
+  </defs>
+  <g id="Philippine_Waters" data-name="Philippine Waters">
+    <g>
+      <rect class="cls-3" width="269.76" height="269.76"/>
+      <g class="cls-2">
+        <g>
+          <circle class="cls-6" cx="0" cy="268.21" r="173.14"/>
+          <circle class="cls-5" cx="0" cy="268.21" r="126.7"/>
+          <circle class="cls-4" cy="268.21" r="82.35"/>
+        </g>
+        <g>
+          <circle class="cls-6" cx="269.76" cy="1.55" r="173.14"/>
+          <circle class="cls-5" cx="269.76" cy="1.55" r="126.7"/>
+          <circle class="cls-4" cx="269.76" cy="1.55" r="82.35"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

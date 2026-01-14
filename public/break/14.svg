@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #00fa00;
+      }
+
+      .cls-2 {
+        fill: #00c2f8;
+      }
+
+      .cls-3 {
+        fill: #ff5800;
+      }
+
+      .cls-4 {
+        fill: #fff;
+      }
+
+      .cls-5 {
+        fill: #fff446;
+      }
+
+      .cls-6 {
+        fill: #ffdb00;
+      }
+
+      .cls-7 {
+        fill: #ffaa4a;
+      }
+
+      .cls-8 {
+        fill: #ff94c1;
+      }
+
+      .cls-9 {
+        fill: #ff8d00;
+      }
+
+      .cls-10 {
+        fill: #ff63ab;
+      }
+
+      .cls-11 {
+        fill: #aa00c9;
+      }
+    </style>
+  </defs>
+  <g id="Halo_Halo" data-name="Halo Halo">
+    <g>
+      <g>
+        <rect class="cls-9" width="269.76" height="269.76"/>
+        <rect class="cls-3" x="134.14" width="135.62" height="269.76"/>
+      </g>
+      <g>
+        <circle class="cls-11" cx="136.29" cy="64.9" r="52.77"/>
+        <path class="cls-2" d="m75.24,269.62s16.29-25.72,55.52-25.72,56.39,25.72,56.39,25.72h-111.9Z"/>
+        <rect class="cls-6" x="71.56" y="35.89" width="56.29" height="29.01"/>
+        <path class="cls-2" d="m59.82,58.59h142.16s13.21,185.06-68.52,185.06S59.82,58.59,59.82,58.59Z"/>
+        <path class="cls-4" d="m169.86,3.7s.34,22.46,20.39,22.46c0,0-20.39.29-20.39,24,0,0,1.83-24.29-20.22-24.29,0,0,20.22-.82,20.22-22.17Z"/>
+        <circle class="cls-10" cx="96.58" cy="97.29" r="17.36"/>
+        <rect class="cls-4" x="151.54" y="101.05" width="31.61" height="31.61"/>
+        <rect class="cls-8" x="130.31" y="133.57" width="28.52" height="44.27" rx="13.82" ry="13.82" transform="translate(-67.75 147.83) rotate(-45)"/>
+        <rect class="cls-1" x="119.37" y="188.3" width="31.61" height="31.61" transform="translate(-104.74 155.36) rotate(-45)"/>
+        <path class="cls-5" d="m89.56,129.24v48.14s23.86-1.01,23.86-24.07-23.86-24.07-23.86-24.07Z"/>
+        <polygon class="cls-7" points="115.01 78.93 158.23 78.93 136.62 106.69 115.01 78.93"/>
+      </g>
+    </g>
+  </g>
+</svg>

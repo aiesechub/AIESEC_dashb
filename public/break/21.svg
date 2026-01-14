@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-3 {
+        fill: aqua;
+      }
+
+      .cls-4 {
+        fill: #00b0f4;
+      }
+
+      .cls-5 {
+        fill: #00a846;
+      }
+
+      .cls-6 {
+        fill: #008d41;
+      }
+
+      .cls-7 {
+        fill: #fff;
+      }
+
+      .cls-8 {
+        fill: #fff446;
+      }
+
+      .cls-9 {
+        fill: #ffaa4a;
+      }
+
+      .cls-10 {
+        fill: #ff8d00;
+      }
+
+      .cls-11 {
+        fill: #ff627a;
+      }
+
+      .cls-12 {
+        fill: #ff8647;
+      }
+
+      .cls-13 {
+        fill: #7bc70f;
+      }
+    </style>
+    <clipPath id="clippath">
+      <path class="cls-1" d="m252.88,14.94L19.24,254.36s93.3,10.7,171.95-66.22S252.88,14.94,252.88,14.94Z"/>
+    </clipPath>
+  </defs>
+  <g id="Boodle_Fight" data-name="Boodle Fight">
+    <g>
+      <rect class="cls-13" width="269.76" height="269.76"/>
+      <g>
+        <g>
+          <path class="cls-5" d="m87.77,87.23C9.12,164.15,19.24,254.36,19.24,254.36L252.88,14.94s-86.46-4.63-165.11,72.29Z"/>
+          <path class="cls-5" d="m252.88,14.94L19.24,254.36s93.3,10.7,171.95-66.22C269.84,111.23,252.88,14.94,252.88,14.94Z"/>
+        </g>
+        <path class="cls-6" d="m252.88,14.94L19.24,254.36s93.3,10.7,171.95-66.22S252.88,14.94,252.88,14.94Z"/>
+        <g>
+          <path class="cls-7" d="m218.16,50.47c-10.2-9.96-26.54-9.76-36.5.45-9.96,10.2-9.76,26.54.45,36.5l36.05-36.95Z"/>
+          <path class="cls-7" d="m79.6,192.43c-10.08-10.08-26.42-10.08-36.5,0s-10.08,26.42,0,36.5l36.5-36.5Z"/>
+          <path class="cls-13" d="m123.49,97.85c-6.8-6.8-17.83-6.8-24.63,0-6.8,6.8-6.8,17.83,0,24.63l24.63-24.63Z"/>
+          <g>
+            <polygon class="cls-3" points="162.63 82.68 161.07 110.22 188.76 108.92 162.63 82.68"/>
+            <path class="cls-3" d="m161.07,110.08s-22.05-6.8-51.69,21.25c-18.36,17.2-22.12,42.07-20.82,51.18,0,0,29.64,3.9,53.93-23.42,14.6-14.75,22.41-38.1,18.58-49.01Z"/>
+          </g>
+          <polygon class="cls-9" points="115.72 82.34 141.75 92.75 145.8 65.28 115.72 82.34"/>
+          <rect class="cls-11" x="65.79" y="124.71" width="20.34" height="42.64" rx="6.57" ry="6.57" transform="translate(40.43 -14.69) rotate(15.02)"/>
+          <g>
+            <rect class="cls-9" x="209.84" y="64.45" width="17.39" height="36.45" rx="5.62" ry="5.62" transform="translate(244.24 -149.56) rotate(75.59)"/>
+            <ellipse class="cls-11" cx="82.3" cy="224.33" rx="14.26" ry="10.7" transform="translate(-155.55 201.44) rotate(-64.36)"/>
+            <ellipse class="cls-11" cx="215.31" cy="112.03" rx="10.7" ry="14.26" transform="translate(-13.22 193.77) rotate(-47.17)"/>
+            <rect class="cls-10" x="104.88" y="197.69" width="21.69" height="21.69"/>
+            <path class="cls-9" d="m141.53,173.91h4.26v26.33c0,4.19-3.41,7.6-7.6,7.6h-4.26v-26.33c0-4.19,3.41-7.6,7.6-7.6Z" transform="translate(-76.7 95.5) rotate(-30)"/>
+            <path class="cls-8" d="m182.22,141.53h4.26v26.33c0,4.19-3.41,7.6-7.6,7.6h-4.26v-26.33c0-4.19,3.41-7.6,7.6-7.6Z" transform="translate(-55.81 201.5) rotate(-51.59)"/>
+            <path class="cls-12" d="m155.43,158.81h4.26c4.19,0,7.6,3.41,7.6,7.6v26.33h-4.26c-4.19,0-7.6-3.41-7.6-7.6v-26.33h0Z" transform="translate(399.96 176.95) rotate(132.83)"/>
+            <path class="cls-12" d="m189.73,120.35h4.26c4.19,0,7.6,3.41,7.6,7.6v26.33h-4.26c-4.19,0-7.6-3.41-7.6-7.6v-26.33h0Z" transform="translate(414.18 40.45) rotate(121.03)"/>
+          </g>
+        </g>
+        <g class="cls-2">
+          <g>
+            <polygon class="cls-4" points="162.63 82.68 161.07 110.22 188.76 108.92 162.63 82.68"/>
+            <path class="cls-4" d="m161.07,110.08s-22.05-6.8-51.69,21.25c-18.36,17.2-22.12,42.07-20.82,51.18,0,0,29.64,3.9,53.93-23.42,14.6-14.75,22.41-38.1,18.58-49.01Z"/>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

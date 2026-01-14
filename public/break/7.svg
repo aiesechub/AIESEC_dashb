@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-3 {
+        fill: #00a846;
+      }
+
+      .cls-4 {
+        fill: #fff;
+      }
+
+      .cls-5 {
+        fill: #ffc27f;
+      }
+
+      .cls-6 {
+        fill: #ff0006;
+      }
+
+      .cls-7 {
+        fill: #ff6143;
+      }
+
+      .cls-8 {
+        fill: #ff627a;
+      }
+
+      .cls-9 {
+        fill: #ff8647;
+      }
+
+      .cls-10 {
+        fill: #b260ab;
+      }
+
+      .cls-11 {
+        fill: #62c66c;
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-1" width="269.76" height="269.76"/>
+    </clipPath>
+  </defs>
+  <g id="Sinigang">
+    <g>
+      <rect class="cls-6" width="269.76" height="269.76"/>
+      <g class="cls-2">
+        <g>
+          <circle class="cls-4" cx="240.36" cy="235.57" r="199.67"/>
+          <circle class="cls-5" cx="240.36" cy="235.57" r="181.43"/>
+          <path class="cls-7" d="m140.95,94.88v74.69s37.49-.44,37.49-37.34-37.49-37.34-37.49-37.34Z"/>
+          <ellipse class="cls-10" cx="226.36" cy="106.16" rx="33.37" ry="21.66" transform="translate(-15.45 169.71) rotate(-39.85)"/>
+          <path class="cls-11" d="m151.81,223.21l31.1,14.11c4.96,2.25,11.12-2.13,12.03-8.54l8.56-60.21c1.24-8.75-7.76-12.83-13.52-6.14l-39.67,46.1c-4.23,4.91-3.46,12.43,1.49,14.68Z"/>
+          <rect class="cls-9" x="225.02" y="146.19" width="55.87" height="55.87" rx="12.57" ry="12.57" transform="translate(181.42 -124.52) rotate(41.99)"/>
+          <path class="cls-8" d="m118.29,201.43h2.46c7.8,0,14.13,6.33,14.13,14.13v24.69c0,7.8-6.33,14.13-14.13,14.13h-27.15c-7.8,0-14.13-6.33-14.13-14.13h0c0-21.42,17.39-38.82,38.82-38.82Z"/>
+          <ellipse class="cls-4" cx="227.53" cy="254.69" rx="26.03" ry="27.85" transform="translate(-108.47 193.53) rotate(-37.91)"/>
+          <path class="cls-3" d="m119.47,171.65c.53-1.22,11.6-27.56-12.61-46.89-24.79-19.8-73.94-12.58-73.94-12.58l.29.2-.29-.2s10.86,48.48,38.22,64.53c26.72,15.68,47.35-4.09,48.3-5.02h0s0,0,.01-.02c.01-.01.02-.02.02-.02h0Z"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

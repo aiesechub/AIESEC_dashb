@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-3 {
+        fill: #ffd400;
+      }
+
+      .cls-4 {
+        fill: #ffb700;
+      }
+
+      .cls-5 {
+        fill: #ff0058;
+      }
+
+      .cls-6 {
+        fill: #ff7b00;
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-1" x="0" y="0" width="269.76" height="269.76" transform="translate(269.76 269.76) rotate(-180)"/>
+    </clipPath>
+  </defs>
+  <g id="Manila_Bay_sunset" data-name="Manila Bay sunset">
+    <g>
+      <rect class="cls-5" x="0" y="0" width="269.76" height="269.76" transform="translate(269.76 269.76) rotate(-180)"/>
+      <g class="cls-2">
+        <g>
+          <circle class="cls-6" cx="269.76" cy="268.3" r="252.91"/>
+          <circle class="cls-4" cx="269.76" cy="268.3" r="187.23"/>
+          <circle class="cls-3" cx="269.76" cy="268.3" r="122.14"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

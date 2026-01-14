@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Cubao";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap; 
+  src: url("/fonts/CubaoFree2-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Pipanganan";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap; 
+  src: url("/fonts/Pipanganan.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Barabara";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap; 
+  src: url("/fonts/BARABARA-final.otf") format("opentype");
+  ascent-override: 85%;
+  descent-override: 15%;
+  line-gap-override: 0%;
+}
+
+@theme {
+  --font-cubao: "Cubao", sans-serif;
+  --font-pipanganan: "Pipanganan", sans-serif;
+  --font-barabara: "Barabara", sans-serif;
+  --font-rounded: "Varela Round", sans-serif;
+}

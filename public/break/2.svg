@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-3 {
+        fill: #ff4500;
+      }
+
+      .cls-4 {
+        fill: #ffe700;
+        opacity: .42;
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-1" width="269.76" height="269.76"/>
+    </clipPath>
+  </defs>
+  <g id="Chocolate_hills" data-name="Chocolate hills">
+    <g>
+      <rect class="cls-3" width="269.76" height="269.76"/>
+      <g class="cls-2">
+        <polygon class="cls-4" points="-1.31 276.79 182.59 42.79 366.49 275.6 -1.31 276.79"/>
+        <polygon class="cls-4" points="87.17 276.79 271.07 42.79 454.98 275.6 87.17 276.79"/>
+        <polygon class="cls-4" points="175.07 276.79 358.98 42.79 542.88 275.6 175.07 276.79"/>
+        <polygon class="cls-4" points="-96.73 276.79 87.17 42.79 271.07 275.6 -96.73 276.79"/>
+        <polygon class="cls-4" points="-183.9 276.79 0 42.79 183.9 275.6 -183.9 276.79"/>
+        <polygon class="cls-4" points="-269.65 276.79 -85.75 42.79 98.16 275.6 -269.65 276.79"/>
+      </g>
+    </g>
+  </g>
+</svg>

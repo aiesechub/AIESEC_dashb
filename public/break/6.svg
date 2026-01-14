@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ff5800;
+      }
+
+      .cls-2 {
+        fill: #ffaa4a;
+      }
+
+      .cls-3 {
+        fill: #ff0006;
+      }
+
+      .cls-4 {
+        fill: #ff8d00;
+      }
+    </style>
+  </defs>
+  <g id="Fort_Santiago" data-name="Fort Santiago">
+    <g>
+      <rect class="cls-1" width="269.76" height="269.76"/>
+      <rect class="cls-2" y="168.25" width="269.76" height="101.51"/>
+      <g>
+        <polygon class="cls-2" points="160.24 45.63 160.24 63.77 142.3 45.12 145.4 45.12 135.24 20.97 125.08 45.12 128.19 45.12 110.24 63.77 110.24 45.63 98.01 76.06 135.24 76.06 172.47 76.06 160.24 45.63"/>
+        <rect class="cls-3" x="99.31" y="76.06" width="72.14" height="40.3"/>
+        <rect class="cls-2" x="69.15" y="116.36" width="131.47" height="153.4"/>
+        <polygon class="cls-4" points="82.74 86.61 70.4 116.36 82.74 116.36 82.74 86.61"/>
+        <polygon class="cls-4" points="187.8 86.61 200.13 116.36 187.8 116.36 187.8 86.61"/>
+        <polygon class="cls-3" points="19.99 269.76 69.15 136.43 69.15 269.76 19.99 269.76"/>
+        <polygon class="cls-3" points="249.77 269.76 200.61 136.43 200.61 269.76 249.77 269.76"/>
+        <path class="cls-1" d="m135.39,186.05h0c13.78,0,24.96,11.19,24.96,24.96v58.75h-49.93v-58.75c0-13.78,11.19-24.96,24.96-24.96Z"/>
+      </g>
+    </g>
+  </g>
+</svg>

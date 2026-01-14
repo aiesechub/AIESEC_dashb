@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #00a846;
+      }
+
+      .cls-2 {
+        fill: #fff;
+      }
+
+      .cls-3 {
+        fill: #fff000;
+      }
+
+      .cls-4 {
+        fill: #ffb300;
+      }
+
+      .cls-5 {
+        fill: #ffaa4a;
+      }
+
+      .cls-6 {
+        fill: #ff0058;
+      }
+
+      .cls-7 {
+        fill: #ff5933;
+      }
+
+      .cls-8 {
+        fill: #cc0061;
+      }
+
+      .cls-9 {
+        fill: #9d00ff;
+      }
+    </style>
+  </defs>
+  <g id="Sorbetes">
+    <g>
+      <rect class="cls-4" x="0" y="0" width="269.76" height="269.76" transform="translate(269.76 269.76) rotate(-180)"/>
+      <g>
+        <path class="cls-3" d="m91.22,59.68c0-10.98-8.9-19.88-19.88-19.88s-19.88,8.9-19.88,19.88h39.76Z"/>
+        <path class="cls-9" d="m135.39,59.68c0-10.98-8.9-19.88-19.88-19.88s-19.88,8.9-19.88,19.88h39.76Z"/>
+        <path class="cls-1" d="m178.76,59.68c0-10.98-8.9-19.88-19.88-19.88s-19.88,8.9-19.88,19.88h39.76Z"/>
+        <polygon class="cls-8" points="15.82 64.85 41.63 83.5 41.63 64.85 15.82 64.85"/>
+        <rect class="cls-6" x="42.13" y="64.85" width="146.75" height="100.05"/>
+        <polygon class="cls-5" points="114.82 136.76 129.37 95.31 99.4 95.31 114.82 136.76"/>
+        <polygon class="cls-5" points="157.94 136.76 172.49 95.31 142.52 95.31 157.94 136.76"/>
+        <polygon class="cls-5" points="73.8 136.76 88.35 95.31 58.37 95.31 73.8 136.76"/>
+        <g>
+          <circle class="cls-2" cx="188.88" cy="164.9" r="65.06"/>
+          <path class="cls-7" d="m123.82,164.9c0-35.93,29.13-65.06,65.06-65.06v65.06h-65.06Z"/>
+          <path class="cls-7" d="m253.94,164.9c0,35.93-29.13,65.06-65.06,65.06v-65.06h65.06Z"/>
+        </g>
+        <polygon class="cls-8" points="42.13 164.9 60.78 164.9 42.42 223.45 42.13 164.9"/>
+      </g>
+    </g>
+  </g>
+</svg>

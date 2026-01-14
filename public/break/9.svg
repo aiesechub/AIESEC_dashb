@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 269.83 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #00b737;
+      }
+
+      .cls-2 {
+        fill: #7bc70f;
+      }
+    </style>
+  </defs>
+  <g id="Mountains_and_ridges" data-name="Mountains and ridges">
+    <g>
+      <rect class="cls-1" width="269.76" height="269.76"/>
+      <polygon class="cls-2" points="0 269.76 134.91 134.85 269.83 269.76 134.91 269.76 0 269.76"/>
+      <polygon class="cls-2" points="269.83 0 134.91 134.91 0 0 134.91 0 269.83 0"/>
+    </g>
+  </g>
+</svg>

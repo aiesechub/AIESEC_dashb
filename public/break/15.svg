@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 269.76 269.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-3 {
+        fill: #0056ab;
+      }
+
+      .cls-4 {
+        fill: #00c2f8;
+      }
+
+      .cls-5 {
+        fill: #00b0f4;
+      }
+
+      .cls-6 {
+        fill: #006ccf;
+      }
+
+      .cls-7 {
+        fill: #fff;
+      }
+
+      .cls-8 {
+        fill: #009af5;
+      }
+
+      .cls-9 {
+        fill: #3dd1f9;
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-1" x="0" y="0" width="269.76" height="269.76" transform="translate(269.76 269.76) rotate(-180)"/>
+    </clipPath>
+  </defs>
+  <g id="Butanding">
+    <g>
+      <g class="cls-2">
+        <rect class="cls-3" x="0" y="0" width="269.76" height="269.76" transform="translate(269.76 269.76) rotate(-180)"/>
+        <g>
+          <polygon class="cls-5" points="269.76 0 269.76 269.76 0 269.76 269.76 0"/>
+          <polygon class="cls-8" points="269.76 116.06 269.76 269.76 116.06 269.76 269.76 116.06"/>
+          <polygon class="cls-4" points="0 269.76 0 0 269.76 0 0 269.76"/>
+          <polygon class="cls-9" points="0 153.7 0 0 153.7 0 0 153.7"/>
+        </g>
+      </g>
+      <g>
+        <g>
+          <polygon class="cls-6" points="193.34 74.04 257.39 74.04 226.01 105.85 193.34 74.04"/>
+          <path class="cls-6" d="m21.58,105.85h205.34s-.58,104.96-102.67,104.96S21.58,105.85,21.58,105.85Z"/>
+        </g>
+        <circle class="cls-7" cx="32.59" cy="30.11" r="11.01"/>
+        <circle class="cls-7" cx="61.89" cy="48.33" r="11.01"/>
+        <path class="cls-7" d="m66.96,131.52c0-6.78-5.5-12.28-12.28-12.28s-12.28,5.5-12.28,12.28h24.56Z"/>
+        <path class="cls-5" d="m76.52,120.45c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <path class="cls-5" d="m110.35,120.45c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <path class="cls-5" d="m94.54,140.69c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <path class="cls-5" d="m130.75,140.69c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <path class="cls-5" d="m112.63,160.93c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <path class="cls-5" d="m149.07,160.93c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <path class="cls-5" d="m130.75,181.17c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <path class="cls-5" d="m167.01,140.69c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <path class="cls-5" d="m144.47,120.45c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <path class="cls-5" d="m180.04,120.45c0,7.2,5.83,13.03,13.03,13.03s13.03-5.83,13.03-13.03h-26.06Z"/>
+        <circle class="cls-7" cx="39.33" cy="77.63" r="11.01"/>
+      </g>
+    </g>
+  </g>
+</svg>
