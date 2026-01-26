@@ -6,11 +6,56 @@ import talentLogo from './assets/logos/global-talent.png';
 import teachLogo from './assets/logos/global-teacher.png';
 import aiesecLogo from './assets/logos/AIESEC-white.png';
 import megaphone from './assets/graphics/megaphone-cartoon.png';
-import phbeach from './assets/images/ph-beach.jpg'
-import banderitas from './assets/graphics/banderitas-nobg.png'
+import phbeach from './assets/images/ph-beach.jpg';
+import banderitas from './assets/graphics/banderitas-nobg.png';
+import event1 from './assets/images/eventPhotos/IMG_8104.JPG';
+import event2 from './assets/images/eventPhotos/IMG_8181.JPG';
+import event3 from './assets/images/eventPhotos/IMG_8872.JPG';
+import event4 from './assets/images/eventPhotos/IMG_9042.JPG';
 
-// --- CUSTOM STYLES & TEXTURES ---
-// Kept the noise, but made the base background warmer
+const events = [
+  {
+    id: 1,
+    title: "Concert",
+    date: "MAR 15",
+    location: "Cubao Expo",
+    image: event1, // Portrait
+    tag: "Live Band",
+    color: "bg-yellow-500",
+    rotation: "-rotate-1",
+  },
+  {
+    id: 2,
+    title: "Outreach",
+    date: "FEB 28",
+    location: "Community Hall",
+    image: event2, // Landscape
+    tag: "Food Trip",
+    color: "bg-rose-500",
+    rotation: "rotate-2",
+  },
+  {
+    id: 3,
+    title: "Workshop",
+    date: "JAN 10",
+    location: "The Library",
+    image: event3, // Square
+    tag: "Culture",
+    color: "bg-teal-600",
+    rotation: "-rotate-2",
+  },
+  {
+    id: 4,
+    title: "Event",
+    date: "APR 02",
+    location: "Auditorium",
+    image: event4, // Portrait
+    tag: "Socials",
+    color: "bg-orange-500",
+    rotation: "rotate-1",
+  },
+];
+
 const textureStyle = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E")`,
 };
@@ -230,17 +275,6 @@ const InfoSections = () => {
                   but <span className="font-bold">proudly Pinoy at heart.</span>
                 </p>
               </div>
-
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2 bg-blue-100 px-4 py-2 rounded-full border border-blue-300">
-                  <Globe size={20} className="text-blue-600" />
-                  <span className="font-bold text-blue-800 text-sm">100+ Countries</span>
-                </div>
-                <div className="flex items-center gap-2 bg-red-100 px-4 py-2 rounded-full border border-red-300">
-                  <Heart size={20} className="text-red-600" />
-                  <span className="font-bold text-red-800 text-sm">Made with Puso</span>
-                </div>
-              </div>
             </div>
 
             {/* Right: The Visual Collage */}
@@ -291,8 +325,7 @@ const InfoSections = () => {
               Why Go <span className="text-yellow-400 underline decoration-wavy decoration-4 underline-offset-8">Global</span>?
             </h2>
             <p className="mt-6 text-xl text-white font-medium max-w-2xl mx-auto bg-black/20 p-4 rounded-xl backdrop-blur-sm border border-white/20">
-              It’s more than just travel. It’s about bringing home a new version of yourself.
-              <br/>This is your <span className="text-yellow-300 font-bold italic">"Baon"</span> for life.
+              Placeholder
             </p>
           </div>
 
@@ -572,6 +605,86 @@ const JeepneyMarquee = () => {
   );
 };
 
+const EventsFeature = () => {
+  return (
+    <section className="relative w-full py-10 overflow-hidden bg-[#fcfbf7] text-slate-900 border-y-4 border-black">
+      {/* Background Texture */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" 
+           style={{ backgroundImage: 'radial-gradient(#444 1px, transparent 1px)', backgroundSize: '15px 15px' }}>
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10 max-w-6xl">
+        
+        {/* Compact Header */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 border-b-2 border-black pb-6 border-dashed">
+          <div className="text-left">
+            <h2 className="text-5xl md:text-5xl font-black tracking-tighter uppercase leading-none text-rose-600 drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]" 
+                style={{ fontFamily: '"Barabara", "Impact", sans-serif' }}>
+              Featured Photos
+            </h2>
+            <p className="text-sm font-bold text-slate-600 uppercase tracking-widest mt-1">
+              Throwback Collection
+            </p>
+          </div>
+          
+          <button className="group relative">
+             <span className="absolute inset-0 bg-black translate-x-1 translate-y-1"></span>
+             <span className="relative block px-4 py-2 bg-yellow-400 border-2 border-black text-sm font-black uppercase hover:-translate-y-0.5 hover:-translate-x-0.5 transition-transform">
+                View All Photos
+             </span>
+          </button>
+        </div>
+
+        {/* Compact Grid - 4 Columns straight */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          {events.map((event) => (
+            <div 
+              key={event.id}
+              className="group relative flex flex-col"
+            >
+              {/* Card Container */}
+              <div className={`relative bg-white border-3 border-black p-2 transition-transform duration-300 hover:-translate-y-1 hover:rotate-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${event.rotation}`}>
+                
+                {/* Date Badge (Small) */}
+                <div className="absolute -top-3 -right-3 z-20 w-10 h-10 bg-white border-2 border-black rounded-full flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                   <span className="text-center font-bold leading-none text-[10px]">
+                     {event.date.split(' ')[0]}
+                   </span>
+                </div>
+
+                {/* Square Image */}
+                <div className="relative aspect-square overflow-hidden border-2 border-black bg-gray-200">
+                  <img 
+                    src={event.image} 
+                    alt={event.title}
+                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:grayscale-0 grayscale"
+                  />
+                  <div className={`absolute inset-0 ${event.color} mix-blend-multiply opacity-20 group-hover:opacity-0 transition-opacity`}></div>
+                </div>
+
+                {/* Compact Content */}
+                <div className="pt-3 pb-1">
+                  <span className={`inline-block text-[10px] font-bold uppercase tracking-wider text-white px-1.5 py-0.5 ${event.color} border border-black mb-1`}>
+                      {event.tag}
+                  </span>
+                  <h3 className="text-lg font-black leading-none uppercase truncate" style={{ fontFamily: '"Passion One", sans-serif' }}>
+                    {event.title}
+                  </h3>
+                  <div className="flex items-center mt-1 text-xs font-bold text-gray-500">
+                    <span className="truncate">{event.location}</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </section>
+  );
+};
+
 // --- PROGRAMS ---
 const Programs = () => {
   return (
@@ -777,6 +890,7 @@ export default function App() {
       <InfoSections />
       <Break />
       <JeepneyMarquee />
+      <EventsFeature />
       <Programs />
       <Footer />
     </div>
