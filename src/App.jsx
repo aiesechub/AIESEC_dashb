@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { motion, useScroll, useTransform, AnimatePresence} from 'framer-motion';
 import { Heart, Globe, Briefcase, BookOpen, Menu, X, Sun, Sparkles, Facebook, Instagram, Linkedin, Twitter, Mail, MapPin, Users, Zap, Star} from 'lucide-react';
 import volLogo from './assets/logos/global-volunteer.png';
@@ -8,53 +8,7 @@ import aiesecLogo from './assets/logos/AIESEC-white.png';
 import megaphone from './assets/graphics/megaphone-cartoon.png';
 import phbeach from './assets/images/ph-beach.jpg';
 import banderitas from './assets/graphics/banderitas-nobg.png';
-import event1 from './assets/images/eventPhotos/IMG_8104.JPG';
-import event2 from './assets/images/eventPhotos/IMG_8181.JPG';
-import event3 from './assets/images/eventPhotos/IMG_8872.JPG';
-import event4 from './assets/images/eventPhotos/IMG_9042.JPG';
-
-const events = [
-  {
-    id: 1,
-    title: "Concert",
-    date: "MAR 15",
-    location: "Cubao Expo",
-    image: event1, // Portrait
-    tag: "Live Band",
-    color: "bg-yellow-500",
-    rotation: "-rotate-1",
-  },
-  {
-    id: 2,
-    title: "Outreach",
-    date: "FEB 28",
-    location: "Community Hall",
-    image: event2, // Landscape
-    tag: "Food Trip",
-    color: "bg-rose-500",
-    rotation: "rotate-2",
-  },
-  {
-    id: 3,
-    title: "Workshop",
-    date: "JAN 10",
-    location: "The Library",
-    image: event3, // Square
-    tag: "Culture",
-    color: "bg-teal-600",
-    rotation: "-rotate-2",
-  },
-  {
-    id: 4,
-    title: "Event",
-    date: "APR 02",
-    location: "Auditorium",
-    image: event4, // Portrait
-    tag: "Socials",
-    color: "bg-orange-500",
-    rotation: "rotate-1",
-  },
-];
+import EventsFeature from './components/EventsFeature';
 
 const textureStyle = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E")`,
@@ -82,13 +36,11 @@ const colors = {
 const Navbar = () => {
   const [isOpen, setIsOpen] = React.useState(false);
 
-  // Array of colors to cycle through for the menu items to create that "Mosaic" feel
   const navColors = [colors.red, colors.green, colors.blue, colors.orange];
 
   return (
     <nav className="fixed w-full z-50 bg-[#FFFBEB] border-b-2 border-black px-4 py-3">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        {/* Logo styled like a retro sticker */}
         <div className="relative group cursor-pointer">
           <div className="relative bg-[#037ef3] px-4 py-2 rounded-lg transform -rotate-2 hover:rotate-0 transition-transform inline-block">
             <img
@@ -99,11 +51,9 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Desktop Menu - Jeepney Sign Style with Mosaic Colors */}
         <div className="hidden md:flex space-x-4">
           {['Home', 'Why?', 'Testimonials', 'Products'].map((item, i) => (
             <a key={item} href="#" className="relative group">
-              {/* Dynamic background color based on index to match the colorful blocks in the image */}
               <div
                 className="absolute inset-0 translate-y-1 translate-x-1 border-2 border-black rounded-md transition-transform group-hover:translate-x-2 group-hover:translate-y-2"
                 style={{ backgroundColor: navColors[i % navColors.length] }}
@@ -115,13 +65,11 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* Mobile Toggle */}
         <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2 border-2 border-black bg-[#FFD100] rounded-md">
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
-      {/* Mobile Menu Dropdown */}
       {isOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-[#FFFBEB] border-b-4 border-black p-4 space-y-3">
           {['Home', 'Why PH', 'Stories', 'Programs'].map((item) => (
@@ -137,10 +85,8 @@ const Navbar = () => {
 
 const Hero = () => {
   return (
-    // Removed bg-[#FFFBEB] so the image shows through
     <section className="relative min-h-screen pt-24 flex items-center overflow-hidden">
       
-      {/* --- 1. Background Image --- */}
       <div className="absolute inset-0 z-0">
         <img 
           src={phbeach} 
@@ -149,19 +95,14 @@ const Hero = () => {
         />
       </div>
 
-      {/* --- 2. Blue Opaque Filter --- */}
-      {/* bg-blue-900 provides the tint, /85 opacity ensures text readability */}
       <div className="absolute inset-0 z-0 bg-yellow-900/60 mix-blend-multiply"></div>
 
-      {/* Texture Overlay */}
       <div className="absolute inset-0 pointer-events-none z-20" style={textureStyle}></div>
 
-      {/* Background Decorative Blobs - Changed blend mode to 'screen/overlay' to glow against dark background */}
       <div className="absolute top-20 right-0 w-96 h-96 bg-[#009BD6] rounded-full mix-blend-overlay filter blur-3xl opacity-40 animate-pulse"></div>
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#FFD100] rounded-full mix-blend-overlay filter blur-3xl opacity-30"></div>
       <div className="absolute top-1/2 left-1/2 w-80 h-80 bg-[#EF3340] rounded-full mix-blend-overlay filter blur-3xl opacity-20"></div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 w-full grid md:grid-cols-2 gap-12 items-center relative z-10">
 
         <div className="space-y-6 text-center md:text-left">
@@ -170,7 +111,6 @@ const Hero = () => {
             <span
               className="font-barabara font-bold drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] block"
               style={{
-                // Gradient Text
                 backgroundImage: 'linear-gradient(to right, #312783, #009BD6, #FFD100, #F58220, #EF3340)',
                 WebkitBackgroundClip: 'text',
                 backgroundClip: 'text',
@@ -185,23 +125,19 @@ const Hero = () => {
             </span>
           </h1>
           <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
-            {/* Primary Button */}
             <button className="bg-[#00A651] border-2 border-white px-8 py-4 text-xl uppercase tracking-wider shadow-[6px_6px_0px_0px_rgba(255,255,255,0.5)] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px] transition-all text-white font-bold">
               Tara, Let's Go!
             </button>
           </div>
         </div>
 
-        {/* Right: Collage Style Image */}
         <div className="relative h-[500px] hidden md:block">
-          {/* Back Layer - Fiesta Red */}
           <motion.div
             animate={{ rotate: [0, 5, 0] }}
             transition={{ duration: 6, repeat: Infinity }}
             className="absolute top-10 right-10 w-full h-full bg-[#EF3340] rounded-[2rem] border-4 border-white z-0"
           ></motion.div>
 
-          {/* Middle Layer - Photo */}
           <motion.div
             animate={{ rotate: [0, -3, 0] }}
             transition={{ duration: 5, repeat: Infinity }}
@@ -210,7 +146,6 @@ const Hero = () => {
             <img src="https://plus.unsplash.com/premium_photo-1700801936645-6315f8298c01?q=80&w=1170&auto=format&fit=crop" className="object-cover w-full h-full grayscale hover:grayscale-0 transition-all duration-500" alt="Filipino Youth" />
           </motion.div>
 
-          {/* Front Layer - Sun Icon */}
           <motion.div
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 3, repeat: Infinity }}
@@ -228,13 +163,8 @@ const InfoSections = () => {
   return (
     <div className="font-sans text-gray-900">
       
-      {/* SECTION 1: 
-          - Changed bg-white to bg-orange-100 (Soft Orange)
-          - Removed Sun and Star animations
-      */}
       <section className="py-24 relative overflow-hidden border-b-4 border-black bg-orange-100">
         
-        {/* BANDERITAS BACKGROUND LOGIC */}
         <div 
           className="absolute top-0 left-0 w-full h-62 opacity-100 z-0 pointer-events-none"
           style={{
@@ -248,9 +178,7 @@ const InfoSections = () => {
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             
-            {/* Left: The Content */}
             <div className="space-y-8">
-              {/* Header styled like a Jeepney Sign */}
               <div className="inline-block relative">
                 <div className="absolute inset-0 bg-yellow-400 translate-x-2 translate-y-2 border-2 border-black rounded-sm"></div>
                 <div className="relative bg-black text-white px-6 py-2 border-2 border-black rounded-sm">
@@ -261,12 +189,11 @@ const InfoSections = () => {
               </div>
 
               <div className="bg-white/90 backdrop-blur-sm border-2 border-black p-6 rounded-xl shadow-[8px_8px_0px_rgba(0,0,0,1)] relative">
-                {/* Decorative Tape */}
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-32 h-6 bg-red-500/80 rotate-1"></div>
                 
                 <p className="text-lg md:text-xl leading-relaxed font-medium">
                   We are <span className="font-bold text-blue-600">AIESEC in the Philippines</span>. 
-                  Since 1968, we’ve been the "training ground" for young Filipino leaders.
+                  Since 1968, we've been the "training ground" for young Filipino leaders.
                 </p>
                 <p className="mt-4 text-gray-600">
                   Think of us as your global <span className="italic font-bold text-red-500">Barkada</span>. 
@@ -277,32 +204,28 @@ const InfoSections = () => {
               </div>
             </div>
 
-            {/* Right: The Visual Collage */}
             <div className="relative h-[400px] w-full flex items-center justify-center">
                
-               {/* Back Layer Photo */}
                <motion.div 
                  whileHover={{ scale: 1.05, rotate: 2 }}
                  className="absolute w-64 h-80 bg-blue-500 rounded-2xl border-4 border-black shadow-[12px_12px_0px_#000] rotate-[-6deg] z-10 overflow-hidden"
                >
                  <img 
                    className="object-cover w-full h-full grayscale hover:grayscale-0 transition-all duration-300" 
-                   src="/api/placeholder/400/320" // Placeholder
+                   src="/api/placeholder/400/320"
                    alt="Member 1"
                  />
                </motion.div>
 
-               {/* Front Layer Photo */}
                <motion.div 
                  whileHover={{ scale: 1.05, rotate: -2 }}
                  className="absolute w-64 h-80 bg-yellow-400 rounded-2xl border-4 border-black shadow-[12px_12px_0px_#000] rotate-[6deg] z-20 translate-x-12 translate-y-8 overflow-hidden"
                >
                  <img 
                     className="object-cover w-full h-full grayscale hover:grayscale-0 transition-all duration-300"
-                    src="/api/placeholder/400/320" // Placeholder
+                    src="/api/placeholder/400/320"
                     alt="Member 2"
                  />
-                 {/* "Sticker" Overlay */}
                  <div className="absolute bottom-4 right-4 bg-red-600 text-white font-black text-xs px-2 py-1 rotate-[-12deg] border border-white shadow-sm">
                    SINCE 1968
                  </div>
@@ -313,9 +236,7 @@ const InfoSections = () => {
         </div>
       </section>
 
-      {/* SECTION 2: UNTOUCHED */}
       <section className="py-24 bg-[#009BD6] relative overflow-hidden">
-        {/* Halftone Pattern Overlay */}
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(white 2px, transparent 2px)', backgroundSize: '30px 30px' }}></div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -331,7 +252,6 @@ const InfoSections = () => {
 
           <div className="grid md:grid-cols-3 gap-8">
             
-            {/* Card 1: Experience */}
             <Card 
               title="THE EXPERIENCE" 
               filipinoTrait="Diskarte"
@@ -341,7 +261,6 @@ const InfoSections = () => {
               rotate="-rotate-2"
             />
 
-            {/* Card 2: Leadership */}
             <Card 
               title="THE GROWTH" 
               filipinoTrait="Tibay ng Loob"
@@ -351,7 +270,6 @@ const InfoSections = () => {
               rotate="rotate-2"
             />
 
-            {/* Card 3: Community */}
             <Card 
               title="THE FAMILY" 
               filipinoTrait="Pakikisama"
@@ -368,20 +286,16 @@ const InfoSections = () => {
   );
 };
 
-// Sub-component for the Cards to keep code clean
 const Card = ({ title, filipinoTrait, description, icon: Icon, accentColor, rotate }) => {
   return (
     <motion.div 
       whileHover={{ y: -10, scale: 1.02 }}
       className={`relative group h-full ${rotate}`}
     >
-      {/* The Shadow Block */}
       <div className={`absolute inset-0 ${accentColor} rounded-2xl translate-x-3 translate-y-3 border-4 border-black`}></div>
       
-      {/* The Card Content */}
       <div className="relative bg-white h-full rounded-2xl border-4 border-black p-8 flex flex-col items-center text-center">
         
-        {/* Icon Circle */}
         <div className={`w-20 h-20 ${accentColor} rounded-full border-4 border-black flex items-center justify-center mb-6 shadow-[4px_4px_0px_#000]`}>
           <Icon size={32} className="text-black" strokeWidth={2.5} />
         </div>
@@ -400,7 +314,6 @@ const Card = ({ title, filipinoTrait, description, icon: Icon, accentColor, rota
 };
 
 const Break = () => {
-  // Generates an array [1, 2, 3, ... 28]
   const squares = Array.from({ length: 28 }, (_, i) => i + 1);
 
   return (
@@ -408,12 +321,8 @@ const Break = () => {
       {squares.map((num) => (
         <img
           key={num}
-          // Note: In most frameworks (Next.js/Vite), remove '/public' from the src path
           src={`/break/${num}.svg`} 
           alt="image"
-          // flex-1: makes them share available width equally
-          // w-0: allows the image to shrink below its intrinsic size to fit the container
-          // h-auto: scales the height automatically based on the new width to maintain aspect ratio
           className="flex-1 w-0 h-auto object-cover" 
         />
       ))}
@@ -430,13 +339,15 @@ const JeepneyMarquee = () => {
     { text: "ADMU KATIPUNAN", est: "1859", address: "Katipunan Ave, Quezon City" },
     { text: "UA&P PASIG", est: "1967", address: "Pearl Drive, Ortigas, Pasig" },
     { text: "UP LOS BAÑOS", est: "1909", address: "Pedro R. Sandoval Ave, Los Baños" },
-    { text: "UP DILIMAN", est: "1908", address: "Diliman, Quezon City" },
+    { text: "UP DILIMAN", est: "1949", address: "Diliman, Quezon City" },
+    { text: "UP CLARK", est: "1979", address: "Clark Freeport Zone, Pampanga" },
+    { text: "UP MANILA", est: "1908", address: "Ermita, Manila" },
+    { text: "DLSU CSB", est: "1988", address: "2544 Taft Avenue, Malate, Manila," }
   ];
 
   return (
     <section className="relative z-30 font-bold">
       
-      {/* --- STATS DASHBOARD --- */}
       <div className="bg-[#1a1a1a] border-y-4 border-yellow-400 py-6 px-4 relative z-20">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 md:gap-12">
           
@@ -472,7 +383,6 @@ const JeepneyMarquee = () => {
         </div>
       </div>
 
-      {/* --- SCROLLING MARQUEE --- */}
       <div className="bg-white py-6 overflow-hidden border-b-4 border-black relative z-10">
         <motion.div
           className="flex whitespace-nowrap gap-6 pl-6"
@@ -484,11 +394,11 @@ const JeepneyMarquee = () => {
             const parts = route.text.split(' ');
             const topLine = parts[0]; 
             const bottomLine = parts.slice(1).join(' '); 
-            const uniqueId = `route-${i}`; // Unique ID for layout animation
+            const uniqueId = `route-${i}`;
 
             return (
               <motion.div 
-                layoutId={uniqueId} // This handles the "Pop out" movement
+                layoutId={uniqueId}
                 key={i} 
                 onClick={() => setSelectedRoute({ ...route, id: uniqueId })}
                 className="
@@ -518,12 +428,10 @@ const JeepneyMarquee = () => {
         </motion.div>
       </div>
 
-      {/* --- MODAL --- */}
       <AnimatePresence>
         {selectedRoute && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 perspective-[1000px]">
             
-            {/* 1. Backdrop */}
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -532,22 +440,19 @@ const JeepneyMarquee = () => {
               className="absolute inset-0 bg-black/60 backdrop-blur-md cursor-pointer"
             />
 
-            {/* 2. Layout Wrapper (Handles the move from marquee to center) */}
             <motion.div
               layoutId={selectedRoute.id}
               className="w-full max-w-md aspect-[4/3] relative z-10"
               transition={{ duration: 0.5, ease: "easeInOut" }}
             >
-              {/* 3. Flip Wrapper (Handles the rotation independently) */}
               <motion.div
                 initial={{ rotateY: 0 }}
                 animate={{ rotateY: 180 }}
                 exit={{ rotateY: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }} // Small delay helps visual clarity
+                transition={{ duration: 0.6, delay: 0.2 }}
                 className="w-full h-full relative [transform-style:preserve-3d]"
               >
                 
-                {/* --- FRONT FACE (Jeepney Sign) --- */}
                 <div 
                   className="absolute inset-0 bg-black border-4 border-white/40 flex flex-col items-center justify-center rounded-xl shadow-2xl [backface-visibility:hidden]"
                 >
@@ -559,14 +464,13 @@ const JeepneyMarquee = () => {
                   </span>
                 </div>
 
-                {/* --- BACK FACE (Details) --- */}
                 <div 
                   className="absolute inset-0 bg-[#222] border-4 border-[#FFD100] flex flex-col items-center justify-center rounded-xl shadow-2xl p-8 text-center [backface-visibility:hidden] [transform:rotateY(180deg)]"
                 >
                   <div className="absolute top-4 right-4">
                     <button 
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevent clicking backdrop
+                        e.stopPropagation();
                         setSelectedRoute(null);
                       }} 
                       className="text-white hover:text-yellow-400 transition-colors"
@@ -605,91 +509,9 @@ const JeepneyMarquee = () => {
   );
 };
 
-const EventsFeature = () => {
-  return (
-    <section className="relative w-full py-10 overflow-hidden bg-[#fcfbf7] text-slate-900 border-y-4 border-black">
-      {/* Background Texture */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none" 
-           style={{ backgroundImage: 'radial-gradient(#444 1px, transparent 1px)', backgroundSize: '15px 15px' }}>
-      </div>
-
-      <div className="container mx-auto px-4 relative z-10 max-w-6xl">
-        
-        {/* Compact Header */}
-        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 border-b-2 border-black pb-6 border-dashed">
-          <div className="text-left">
-            <h2 className="text-5xl md:text-5xl font-black tracking-tighter uppercase leading-none text-rose-600 drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]" 
-                style={{ fontFamily: '"Barabara", "Impact", sans-serif' }}>
-              Featured Photos
-            </h2>
-            <p className="text-sm font-bold text-slate-600 uppercase tracking-widest mt-1">
-              Throwback Collection
-            </p>
-          </div>
-          
-          <button className="group relative">
-             <span className="absolute inset-0 bg-black translate-x-1 translate-y-1"></span>
-             <span className="relative block px-4 py-2 bg-yellow-400 border-2 border-black text-sm font-black uppercase hover:-translate-y-0.5 hover:-translate-x-0.5 transition-transform">
-                View All Photos
-             </span>
-          </button>
-        </div>
-
-        {/* Compact Grid - 4 Columns straight */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {events.map((event) => (
-            <div 
-              key={event.id}
-              className="group relative flex flex-col"
-            >
-              {/* Card Container */}
-              <div className={`relative bg-white border-3 border-black p-2 transition-transform duration-300 hover:-translate-y-1 hover:rotate-0 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${event.rotation}`}>
-                
-                {/* Date Badge (Small) */}
-                <div className="absolute -top-3 -right-3 z-20 w-10 h-10 bg-white border-2 border-black rounded-full flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                   <span className="text-center font-bold leading-none text-[10px]">
-                     {event.date.split(' ')[0]}
-                   </span>
-                </div>
-
-                {/* Square Image */}
-                <div className="relative aspect-square overflow-hidden border-2 border-black bg-gray-200">
-                  <img 
-                    src={event.image} 
-                    alt={event.title}
-                    className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:grayscale-0 grayscale"
-                  />
-                  <div className={`absolute inset-0 ${event.color} mix-blend-multiply opacity-20 group-hover:opacity-0 transition-opacity`}></div>
-                </div>
-
-                {/* Compact Content */}
-                <div className="pt-3 pb-1">
-                  <span className={`inline-block text-[10px] font-bold uppercase tracking-wider text-white px-1.5 py-0.5 ${event.color} border border-black mb-1`}>
-                      {event.tag}
-                  </span>
-                  <h3 className="text-lg font-black leading-none uppercase truncate" style={{ fontFamily: '"Passion One", sans-serif' }}>
-                    {event.title}
-                  </h3>
-                  <div className="flex items-center mt-1 text-xs font-bold text-gray-500">
-                    <span className="truncate">{event.location}</span>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          ))}
-        </div>
-
-      </div>
-    </section>
-  );
-};
-
-// --- PROGRAMS ---
 const Programs = () => {
   return (
     <section className="py-24 bg-white relative overflow-hidden">
-      {/* Background Texture (Halftone) */}
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
         backgroundImage: 'radial-gradient(circle, #312783 2px, transparent 2.5px)',
         backgroundSize: '16px 16px'
@@ -701,82 +523,66 @@ const Programs = () => {
             CHOOSE YOUR <span className="text-[#FFD100] text-stroke-black">ADVENTURE</span>
           </h2>
           <p className="text-xl mt-4 max-w-2xl mx-auto text-gray-600">
-            Find the program that matches your vibe.
+            Find the product that matches your vibe.
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
 
-          {/* --- GLOBAL VOLUNTEER CARD (Red - "Love" Heart Color) --- */}
           <motion.div
             whileHover={{ y: -10 }}
             className="group relative flex flex-col h-full"
           >
             <div className="h-full bg-[#FFF0F1] border-4 border-[#EF3340] rounded-2xl p-8 shadow-[8px_8px_0px_0px_#EF3340] flex flex-col items-center text-center">
-
               <div className="h-24 mb-6 flex items-center justify-center">
                 <img src={volLogo} alt="Global Volunteer" className="h-full object-contain drop-shadow-sm" />
               </div>
-
               <h3 className="font-pipanganan text-3xl text-[#EF3340] mb-2 uppercase leading-none">
                 The Spirit of <br /> Bayanihan
               </h3>
-
               <p className="text-gray-700 mb-8 flex-grow">
                 Experience the Filipino culture of communal unity. Volunteer to help communities lift each other up.
               </p>
-
               <button className="w-full bg-[#EF3340] text-white font-pipanganan text-xl py-3 rounded-lg uppercase border-2 border-[#EF3340] hover:bg-white hover:text-[#EF3340] transition-all shadow-md">
                 Start Volunteering
               </button>
             </div>
           </motion.div>
 
-          {/* --- GLOBAL TALENT CARD (Blue - "Love" Ocean Color) --- */}
           <motion.div
             whileHover={{ y: -10 }}
             className="group relative flex flex-col h-full"
           >
-            {/* Changed from Teal to the Azure Blue from the image */}
             <div className="h-full bg-[#E0F4FB] border-4 border-[#52BCC6] rounded-2xl p-8 shadow-[8px_8px_0px_0px_#52BCC6] flex flex-col items-center text-center">
-
               <div className="h-24 mb-6 flex items-center justify-center">
                 <img src={talentLogo} alt="Global Talent" className="h-full object-contain drop-shadow-sm" />
               </div>
-
               <h3 className="font-pipanganan text-3xl text-[#52BCC6] mb-2 uppercase leading-none">
                 Innovate with <br /> Diskarte
               </h3>
-
               <p className="text-gray-700 mb-8 flex-grow">
                 Showcase your Filipino resourcefulness in a global professional setting.
               </p>
-
               <button className="w-full bg-[#52BCC6] text-white font-pipanganan text-xl py-3 rounded-lg uppercase border-2 border-[#52BCC6] hover:bg-white hover:text-[#009BD6] transition-all shadow-md">
                 Find Opportunities
               </button>
             </div>
           </motion.div>
 
-          {/* --- GLOBAL TEACHER CARD (Yellow/Orange - "Love" Sun Color) --- */}
           <motion.div
             whileHover={{ y: -10 }}
             className="group relative flex flex-col h-full"
           >
             <div className="h-full bg-[#FFF8E1] border-4 border-[#F58220] rounded-2xl p-8 shadow-[8px_8px_0px_0px_#F58220] flex flex-col items-center text-center">
-
               <div className="h-24 mb-6 flex items-center justify-center">
                 <img src={teachLogo} alt="Global Teacher" className="h-full object-contain drop-shadow-sm" />
               </div>
-
               <h3 className="font-pipanganan text-3xl text-[#F58220] mb-2 uppercase leading-none">
                 Nurture with <br /> Pag-aaruga
               </h3>
-
               <p className="text-gray-700 mb-8 flex-grow">
                 Embody the Filipino trait of nurturing care and foster growth in classrooms abroad.
               </p>
-
               <button className="w-full bg-[#F58220] text-white font-pipanganan text-xl py-3 rounded-lg uppercase border-2 border-[#F58220] hover:bg-white hover:text-[#F58220] transition-all shadow-md">
                 Start Teaching
               </button>
@@ -792,22 +598,17 @@ const Programs = () => {
 const Footer = () => (
   <div className="flex flex-col relative">
     
-    {/* 1. "Bandaritas" Top Border - Using the Fiesta Palette (Red -> Yellow -> Green) */}
     <div className="h-4 w-full bg-[linear-gradient(to_right,#EF3340,#FFD100,#00A651,#009BD6)]"></div>
 
-    {/* 2. Main Footer Background: Deep Indigo (#312783) */}
     <footer className="bg-[#312783] text-white py-16 px-4 relative overflow-hidden">
       
-      {/* Optional: Subtle background texture to give it a 'woven' feel */}
       <div className="absolute inset-0 opacity-5 pointer-events-none" 
            style={{ backgroundImage: 'radial-gradient(circle, #FFF 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
       </div>
 
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 relative z-10">
         
-        {/* Left Column: Organization Info */}
         <div className="space-y-6 text-sm opacity-90">
-          {/* Logo - Sits naturally on the indigo background now */}
           <img src={aiesecLogo} alt="AIESEC Logo" className="h-8 w-auto mb-4" />
 
           <p className="leading-relaxed text-indigo-100">
@@ -824,14 +625,12 @@ const Footer = () => (
           </p>
         </div>
 
-        {/* Right Column: Contact & Connect */}
         <div className="space-y-8">
           <div>
             <h3 className="font-barabara text-3xl tracking-wide text-[#FFD100] mb-6 uppercase">
               Tara, Let's Connect!
             </h3>
             
-            {/* Social Icons - White with Mango Yellow Hover */}
             <div className="flex gap-5">
               {[Facebook, Instagram, Twitter, Linkedin].map((Icon, i) => (
                 <a key={i} href="#" className="bg-white/10 p-3 rounded-full hover:bg-[#FFD100] hover:text-[#312783] transition-all transform hover:-translate-y-1">
@@ -841,7 +640,6 @@ const Footer = () => (
             </div>
           </div>
 
-          {/* Contact Info */}
           <div className="space-y-4 text-base text-indigo-50">
             <div className="flex items-center gap-3 group cursor-pointer">
               <Mail className="text-[#FFD100]" size={20} />
@@ -855,7 +653,6 @@ const Footer = () => (
             </div>
           </div>
 
-          {/* Legal Links - Styled subtly */}
           <div className="text-xs text-indigo-300 space-y-4 pt-6 border-t border-indigo-700/50">
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               <a href="#" className="hover:text-[#FFD100] transition-colors underline decoration-dotted">Privacy Notice</a>
@@ -870,7 +667,6 @@ const Footer = () => (
       </div>
     </footer>
 
-    {/* 3. Bottom Bar: "Made with Rice" Joke + Salamat */}
     <div className="bg-[#1a144f] text-indigo-200 py-4 text-center text-sm px-4">
       <p className="flex items-center justify-center gap-2 flex-wrap">
         <span>© 2026 AIESEC Philippines.</span>
