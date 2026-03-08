@@ -1,16 +1,11 @@
 // src/components/EventsFeature.jsx
-// Fetches active event data from Supabase and renders the Featured Photos section.
-//
-// Data shape from Supabase (via AdminApp):
-//   color    → string key: "yellow" | "rose" | "teal" | "orange" | "blue" | "indigo" | "green" | "red"
-//   rotation → number: -2 | -1 | 0 | 1 | 2
-//   is_active → boolean (getEvents() already filters to active only)
+// Infinite auto-scrolling carousel of featured (starred) polaroid cards.
+// Cards tilt gently as they drift right; hover pauses & un-tilts the hovered card.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getEvents } from '../lib/supabase';
 
-// ─── Color map: key → { bg (hex), light (hex) } ──────────────────────────────
-// Mirrors COLOR_MAP in AdminApp so the preview and live site are identical.
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const COLOR_MAP = {
   yellow: { bg: '#EAB308', light: '#FEF9C3' },
   rose:   { bg: '#F43F5E', light: '#FFF1F2' },
@@ -22,165 +17,321 @@ const COLOR_MAP = {
   red:    { bg: '#DC2626', light: '#FEF2F2' },
 };
 
-// ─── Rotation map: number → CSS transform string ─────────────────────────────
-const ROTATION_MAP = {
-  '-2': 'rotate(-2deg)',
-  '-1': 'rotate(-1deg)',
-   '0': 'rotate(0deg)',
-   '1': 'rotate(1deg)',
-   '2': 'rotate(2deg)',
-};
+// Each card gets a slightly different rotation so the strip feels organic.
+const TILT_SEQUENCE = [-2, 1, -1, 2, -2, 0, 1, -1, 2, -2];
 
-// Skeleton card — matches card dimensions to prevent layout shift
-const EventCardSkeleton = () => (
-  <div className="group relative flex flex-col animate-pulse">
-    <div className="relative bg-white border-2 border-gray-100 p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.08)]">
-      <div className="aspect-square bg-gray-200" />
-      <div className="pt-3 pb-1 space-y-2">
-        <div className="h-3 w-12 bg-gray-200 rounded" />
-        <div className="h-5 w-24 bg-gray-200 rounded" />
-        <div className="h-3 w-20 bg-gray-100 rounded" />
+// ─── Skeleton card ────────────────────────────────────────────────────────────
+function EventCardSkeleton() {
+  return (
+    <div style={{ flexShrink: 0, width: 200, padding: '20px 14px' }}>
+      <div style={{
+        background: 'white', border: '3px solid #e5e7eb', padding: 8,
+        boxShadow: '4px 4px 0 rgba(0,0,0,0.08)',
+      }}>
+        <div style={{ aspectRatio: '1/1', background: '#f3f4f6' }} />
+        <div style={{ padding: '10px 4px 6px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ height: 10, width: 48, background: '#e5e7eb', borderRadius: 3 }} />
+          <div style={{ height: 16, width: 80, background: '#f3f4f6', borderRadius: 3 }} />
+          <div style={{ height: 10, width: 64, background: '#f9fafb', borderRadius: 3 }} />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+}
 
+// ─── Single polaroid card ─────────────────────────────────────────────────────
+function PolaroidCard({ event, tiltDeg, isHovered, onMouseEnter, onMouseLeave }) {
+  const c = COLOR_MAP[event.color] || COLOR_MAP.yellow;
+  const transform = isHovered
+    ? 'rotate(0deg) translateY(-14px) scale(1.05)'
+    : `rotate(${tiltDeg}deg)`;
+
+  return (
+    <div
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={{ flexShrink: 0, width: 200, padding: '20px 14px', cursor: 'default' }}
+    >
+      <div style={{
+        position: 'relative',
+        background: 'white',
+        border: '3px solid black',
+        padding: 8,
+        boxShadow: isHovered
+          ? '8px 8px 0 rgba(0,0,0,1)'
+          : '4px 4px 0 rgba(0,0,0,0.85)',
+        transform,
+        transition: 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
+        willChange: 'transform',
+      }}>
+        {/* Date badge */}
+        <div style={{
+          position: 'absolute', top: -14, right: -14, zIndex: 20,
+          width: 40, height: 40,
+          background: 'white', border: '2px solid black', borderRadius: '50%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '1px 1px 0 black',
+        }}>
+          <span style={{
+            fontFamily: 'system-ui, sans-serif', fontWeight: 900,
+            fontSize: 9, lineHeight: 1.1, textAlign: 'center',
+          }}>
+            {(event.date || '').split(' ')[0]}
+          </span>
+        </div>
+
+        {/* Image */}
+        <div style={{
+          position: 'relative', aspectRatio: '1/1',
+          overflow: 'hidden', border: '2px solid black',
+          background: c.light,
+        }}>
+          {event.image_url ? (
+            <img
+              src={event.image_url}
+              alt={event.title}
+              style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+                filter: isHovered ? 'grayscale(0%)' : 'grayscale(100%)',
+                transform: isHovered ? 'scale(1.08)' : 'scale(1)',
+                transition: 'filter 0.5s ease, transform 0.5s ease',
+              }}
+            />
+          ) : (
+            <div style={{
+              width: '100%', height: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: '"Impact", sans-serif', fontSize: 10,
+              textTransform: 'uppercase', letterSpacing: 2,
+              color: c.bg, opacity: 0.6,
+            }}>No Photo</div>
+          )}
+          {/* Color overlay fades out on hover */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: c.bg, mixBlendMode: 'multiply',
+            opacity: isHovered ? 0 : 0.18,
+            transition: 'opacity 0.4s ease',
+          }} />
+        </div>
+
+        {/* Text */}
+        <div style={{ padding: '10px 4px 4px' }}>
+          <span style={{
+            display: 'inline-block',
+            fontFamily: 'system-ui, sans-serif', fontWeight: 800,
+            fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em',
+            color: 'white', padding: '2px 6px',
+            background: c.bg, border: '1px solid black', marginBottom: 4,
+          }}>{event.tag}</span>
+          <p style={{
+            fontFamily: '"Barabara", "Impact", "Arial Black", sans-serif',
+            fontSize: 14, textTransform: 'uppercase', lineHeight: 1.15,
+            margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{event.title}</p>
+          <p style={{
+            fontFamily: 'system-ui, sans-serif', fontWeight: 700,
+            fontSize: 10, color: '#6b7280', margin: '3px 0 0',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{event.location}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function EventsFeature() {
-  const [events, setEvents]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const [events,     setEvents]     = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState(null);
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
+  const trackRef  = useRef(null);
+  const rafRef    = useRef(null);
+  const offsetRef = useRef(0);
+  const pausedRef = useRef(false);
+
+  const SPEED = 0.5; // px per frame — slow drift
 
   useEffect(() => {
     getEvents()
-      .then(setEvents)
+      .then(data => setEvents(data.filter(e => e.is_featured === true && e.is_active === true)))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
+  // ── Infinite rAF scroll loop ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!events.length) return;
+    const track = trackRef.current;
+    if (!track) return;
+
+    // Half the track width = one full set of cards (we render 4× copies)
+    // We reset once we've drifted one copy-length
+    let halfWidth = 0;
+
+    const measure = () => {
+      // cards are rendered 4 times; one "loop unit" = track / 4
+      halfWidth = track.scrollWidth / 4;
+    };
+
+    measure();
+
+    const animate = () => {
+      if (!pausedRef.current) {
+        offsetRef.current += SPEED;
+        if (halfWidth > 0 && offsetRef.current >= halfWidth) {
+          offsetRef.current -= halfWidth;
+        }
+        track.style.transform = `translateX(-${offsetRef.current}px)`;
+      }
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+
+    // Re-measure if window resizes
+    window.addEventListener('resize', measure);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('resize', measure);
+    };
+  }, [events]);
+
+  // Duplicate 4× so even a single card loops seamlessly across any viewport
+  const displayEvents = events.length
+    ? [...events, ...events, ...events, ...events]
+    : [];
+
   return (
-    <section className="relative w-full py-10 bg-[#fcfbf7] text-slate-900 border-y-4 border-black">
-      {/* Background Texture */}
-      <div
-        className="absolute inset-0 opacity-10 pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(#444 1px, transparent 1px)', backgroundSize: '15px 15px' }}
-      />
+    <section style={{
+      position: 'relative', width: '100%', padding: '48px 0',
+      background: '#fcfbf7',
+      borderTop: '4px solid black', borderBottom: '4px solid black',
+      overflow: 'hidden',
+    }}>
+      {/* Dot texture */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: 'radial-gradient(#44444418 1px, transparent 1px)',
+        backgroundSize: '15px 15px',
+      }} />
 
-      <div className="container mx-auto px-4 relative z-10 max-w-6xl">
-
-        {/* Header */}
-        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 border-b-2 border-black pb-6 border-dashed">
-          <div className="text-left">
-            <h2
-              className="text-5xl font-black tracking-tighter uppercase leading-none text-rose-600 drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]"
-              style={{ fontFamily: '"Barabara", "Impact", sans-serif' }}
-            >
-              Featured Photos
-            </h2>
-            <p className="text-sm font-bold text-slate-600 uppercase tracking-widest mt-1">
-              Throwback Collection
-            </p>
+      {/* ── Header ── */}
+      <div style={{
+        position: 'relative', zIndex: 10,
+        maxWidth: 1200, margin: '0 auto', padding: '0 24px',
+      }}>
+        <div style={{
+          display: 'flex', flexWrap: 'wrap',
+          alignItems: 'center', justifyContent: 'space-between',
+          gap: 16, marginBottom: 32,
+          paddingBottom: 20, borderBottom: '2px dashed black',
+        }}>
+          <div>
+            <h2 style={{
+              fontFamily: '"Barabara", "Impact", "Arial Black", sans-serif',
+              fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
+              fontWeight: 900, textTransform: 'uppercase',
+              lineHeight: 1, margin: 0,
+              color: '#EF3340',
+              textShadow: '2px 2px 0 black',
+            }}>Featured Photos</h2>
+            <p style={{
+              fontFamily: 'system-ui, sans-serif', fontWeight: 700,
+              fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.25em',
+              color: '#64748b', margin: '6px 0 0',
+            }}>Throwback Collection</p>
           </div>
 
-          <button className="group relative">
-            <span className="absolute inset-0 bg-black translate-x-1 translate-y-1" />
-            <span className="relative block px-4 py-2 bg-yellow-400 border-2 border-black text-sm font-black uppercase hover:-translate-y-0.5 hover:-translate-x-0.5 transition-transform">
+          {/* View All button */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <span style={{
+              position: 'absolute', inset: 0,
+              background: 'black', transform: 'translate(4px,4px)',
+            }} />
+            <button
+              style={{
+                position: 'relative', padding: '10px 20px',
+                background: '#FFD100', border: '2px solid black',
+                fontFamily: '"Barabara", "Impact", "Arial Black", sans-serif',
+                fontSize: 13, textTransform: 'uppercase',
+                letterSpacing: '0.12em', cursor: 'pointer',
+                transition: 'transform 0.15s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'translate(-2px,-2px)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'translate(0,0)'}
+            >
               View All Photos
-            </span>
-          </button>
+            </button>
+          </div>
         </div>
+      </div>
 
-        {/* Error state */}
-        {error && (
-          <p className="text-center py-10 text-red-500 font-bold text-sm">
-            Couldn't load photos: {error}
-          </p>
-        )}
+      {/* ── Error ── */}
+      {error && (
+        <p style={{
+          textAlign: 'center', color: '#EF3340',
+          fontWeight: 700, fontSize: 13, padding: '0 0 24px',
+        }}>
+          Couldn't load photos: {error}
+        </p>
+      )}
 
-        {/* Cards grid — overflow visible so rotated card corners are never clipped */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6" style={{ overflow: 'visible' }}>
-          {loading
-            ? [1, 2, 3, 4].map(n => <EventCardSkeleton key={n} />)
-            : events.map(event => {
-                const c = COLOR_MAP[event.color] || COLOR_MAP.yellow;
-                const rotationCss = ROTATION_MAP[String(event.rotation)] ?? 'rotate(-1deg)';
+      {/* ── Carousel strip ── */}
+      {/* Edge fade masks so cards disappear cleanly at viewport edges */}
+      <div style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: 100, zIndex: 20,
+        background: 'linear-gradient(to right, #fcfbf7 30%, transparent)',
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', right: 0, top: 0, bottom: 0, width: 100, zIndex: 20,
+        background: 'linear-gradient(to left, #fcfbf7 30%, transparent)',
+        pointerEvents: 'none',
+      }} />
 
-                return (
-                  // The padding on this wrapper is what gives the rotated card's
-                  // corners room — they stay within the grid cell and never overlap
-                  // adjacent cards' text
-                  <div
-                    key={event.id}
-                    className="group flex items-start justify-center"
-                    style={{ padding: '16px 12px' }}
-                  >
-                    {/* The entire card rotates — content, image, text, everything */}
-                    <div
-                      className="relative bg-white border-[3px] border-black p-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] w-full transition-[box-shadow,transform] duration-200 hover:shadow-none hover:translate-x-1 hover:translate-y-1"
-                      style={{ transform: rotationCss }}
-                    >
-                      {/* Date Badge */}
-                      <div className="absolute -top-4 -right-4 z-20 w-10 h-10 bg-white border-2 border-black rounded-full flex items-center justify-center shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                        <span className="text-center font-bold leading-none text-[10px]">
-                          {(event.date || '').split(' ')[0]}
-                        </span>
-                      </div>
-
-                      {/* Image */}
-                      <div
-                        className="relative aspect-square overflow-hidden border-2 border-black"
-                        style={{ backgroundColor: c.light }}
-                      >
-                        {event.image_url ? (
-                          <img
-                            src={event.image_url}
-                            alt={event.title}
-                            className="w-full h-full object-cover grayscale transition-all duration-500 group-hover:scale-110 group-hover:grayscale-0"
-                          />
-                        ) : (
-                          <div
-                            className="w-full h-full flex items-center justify-center text-xs font-bold uppercase tracking-widest opacity-60"
-                            style={{ color: c.bg }}
-                          >
-                            No Photo
-                          </div>
-                        )}
-                        <div
-                          className="absolute inset-0 mix-blend-multiply opacity-20 group-hover:opacity-0 transition-opacity"
-                          style={{ backgroundColor: c.bg }}
-                        />
-                      </div>
-
-                      {/* Card text */}
-                      <div className="pt-3 pb-2 px-1">
-                        <span
-                          className="inline-block text-[10px] font-bold uppercase tracking-wider text-white px-1.5 py-0.5 border border-black mb-1"
-                          style={{ backgroundColor: c.bg }}
-                        >
-                          {event.tag}
-                        </span>
-                        <h3
-                          className="text-lg font-black leading-tight uppercase truncate mt-1"
-                          style={{ fontFamily: '"Barabara", "Impact", sans-serif' }}
-                        >
-                          {event.title}
-                        </h3>
-                        <p className="mt-1 text-xs font-bold text-gray-500 truncate">
-                          {event.location}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-        </div>
-
-        {/* Empty state */}
-        {!loading && !error && events.length === 0 && (
-          <p className="text-center py-16 font-bold text-sm uppercase tracking-widest text-gray-400">
+      <div style={{ width: '100%', overflow: 'hidden' }}>
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            {[1,2,3,4].map(n => <EventCardSkeleton key={n} />)}
+          </div>
+        ) : events.length === 0 && !error ? (
+          <p style={{
+            textAlign: 'center', padding: '64px 0',
+            fontFamily: 'system-ui, sans-serif', fontWeight: 700,
+            fontSize: 13, textTransform: 'uppercase',
+            letterSpacing: '0.2em', color: '#9ca3af',
+          }}>
             No featured photos yet — check back soon!
           </p>
+        ) : (
+          <div
+            ref={trackRef}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              willChange: 'transform',
+              padding: '8px 0 20px',
+            }}
+          >
+            {displayEvents.map((event, i) => {
+              const originalIdx = i % events.length;
+              const tiltDeg = TILT_SEQUENCE[originalIdx % TILT_SEQUENCE.length];
+              return (
+                <PolaroidCard
+                  key={`${event.id}-${i}`}
+                  event={event}
+                  tiltDeg={tiltDeg}
+                  isHovered={hoveredIdx === i}
+                  onMouseEnter={() => { pausedRef.current = true; setHoveredIdx(i); }}
+                  onMouseLeave={() => { pausedRef.current = false; setHoveredIdx(null); }}
+                />
+              );
+            })}
+          </div>
         )}
-
       </div>
     </section>
   );
