@@ -167,12 +167,9 @@ export default function EventsFeature() {
     const track = trackRef.current;
     if (!track) return;
 
-    // Half the track width = one full set of cards (we render 4× copies)
-    // We reset once we've drifted one copy-length
     let halfWidth = 0;
 
     const measure = () => {
-      // cards are rendered 4 times; one "loop unit" = track / 4
       halfWidth = track.scrollWidth / 4;
     };
 
@@ -191,7 +188,6 @@ export default function EventsFeature() {
 
     rafRef.current = requestAnimationFrame(animate);
 
-    // Re-measure if window resizes
     window.addEventListener('resize', measure);
     return () => {
       cancelAnimationFrame(rafRef.current);
@@ -199,23 +195,26 @@ export default function EventsFeature() {
     };
   }, [events]);
 
-  // Duplicate 4× so even a single card loops seamlessly across any viewport
   const displayEvents = events.length
     ? [...events, ...events, ...events, ...events]
     : [];
 
   return (
     <section style={{
-      position: 'relative', width: '100%', padding: '48px 0',
-      background: '#fcfbf7',
-      borderTop: '4px solid black', borderBottom: '4px solid black',
+      position: 'relative',
+      width: '100%',
+      paddingBottom: 56,
+      background: '#FFFBEB',
+      borderTop: '4px solid black',
+      borderBottom: '4px solid black',
       overflow: 'hidden',
     }}>
-      {/* Dot texture */}
+
+      {/* ── Dot texture ── */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: 'radial-gradient(#44444418 1px, transparent 1px)',
-        backgroundSize: '15px 15px',
+        backgroundImage: 'radial-gradient(circle, rgba(3,126,243,0.10) 1.5px, transparent 1.5px)',
+        backgroundSize: '20px 20px',
       }} />
 
       {/* ── Header ── */}
@@ -223,47 +222,126 @@ export default function EventsFeature() {
         position: 'relative', zIndex: 10,
         maxWidth: 1200, margin: '0 auto', padding: '0 24px',
       }}>
+
+        {/* Top accent bar — full-width colour stripe */}
+        <div style={{
+          height: 8,
+          background: 'linear-gradient(to right, #EF3340, #FFD100, #00A651, #009BD6, #F58220)',
+          border: '2px solid black',
+          borderTop: 'none',
+          marginBottom: 0,
+        }} />
+
         <div style={{
           display: 'flex', flexWrap: 'wrap',
           alignItems: 'center', justifyContent: 'space-between',
-          gap: 16, marginBottom: 32,
-          paddingBottom: 20, borderBottom: '2px dashed black',
+          gap: 16,
+          padding: '28px 0 24px',
+          borderBottom: '4px solid black',
+          marginBottom: 8,
         }}>
-          <div>
-            <h2 style={{
-              fontFamily: '"Barabara", "Impact", "Arial Black", sans-serif',
-              fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
-              fontWeight: 900, textTransform: 'uppercase',
-              lineHeight: 1, margin: 0,
-              color: '#EF3340',
-              textShadow: '2px 2px 0 black',
-            }}>Featured Photos</h2>
-            <p style={{
-              fontFamily: 'system-ui, sans-serif', fontWeight: 700,
-              fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.25em',
-              color: '#64748b', margin: '6px 0 0',
-            }}>Throwback Collection</p>
+
+          {/* Left — heading stack */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {/* Pre-label pill */}
+            <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+              <span style={{
+                fontFamily: '"Barabara", "Impact", "Arial Black", sans-serif',
+                fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.25em',
+                color: 'black', background: '#FFD100',
+                padding: '3px 14px',
+                border: '2px solid black',
+                borderRadius: 999,
+                boxShadow: '3px 3px 0 black',
+              }}>
+                📸 Throwback Collection
+              </span>
+            </div>
+
+            {/* Main heading — brutalist slab */}
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              {/* Red shadow layer */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: '#EF3340',
+                transform: 'translate(6px, 7px) skewX(-2deg)',
+                border: '3px solid black',
+                borderRadius: 4,
+              }} />
+              {/* Yellow mid layer */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: '#FFD100',
+                transform: 'translate(3px, 4px) skewX(-1deg)',
+                border: '3px solid black',
+                borderRadius: 4,
+              }} />
+              {/* Front face */}
+              <div style={{
+                position: 'relative',
+                background: '#20a2ec',
+                border: '3px solid black',
+                borderRadius: 4,
+                padding: '10px 24px 10px 20px',
+                transform: 'skewX(-1.5deg)',
+              }}>
+                {/* Diagonal hatch accent on right edge */}
+                <div style={{
+                  position: 'absolute', top: 0, right: 0, bottom: 0, width: 10,
+                  backgroundImage: 'repeating-linear-gradient(45deg, #FFD100 0px, #FFD100 3px, transparent 3px, transparent 9px)',
+                  borderLeft: '2px solid black',
+                }} />
+                <h2 style={{
+                  fontFamily: '"Barabara", "Impact", "Arial Black", sans-serif',
+                  fontSize: 'clamp(2rem, 5vw, 3.2rem)',
+                  fontWeight: 900, textTransform: 'uppercase',
+                  lineHeight: 1, margin: 0,
+                  color: 'white',
+                  transform: 'skewX(1.5deg)',
+                  display: 'inline-block',
+                  textShadow: '3px 3px 0 rgba(0,0,0,0.2)',
+                }}>
+                  Featured{' '}
+                  <span style={{ color: '#FFD100' }}>Photos</span>
+                </h2>
+              </div>
+            </div>
           </div>
 
-          {/* View All button */}
+          {/* Right — View All button */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <span style={{
+            {/* Shadow layers */}
+            <div style={{
               position: 'absolute', inset: 0,
-              background: 'black', transform: 'translate(4px,4px)',
+              background: '#EF3340',
+              transform: 'translate(6px, 6px)',
+              border: '3px solid black',
+              borderRadius: 6,
+            }} />
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: '#FFD100',
+              transform: 'translate(3px, 3px)',
+              border: '3px solid black',
+              borderRadius: 6,
             }} />
             <button
               style={{
-                position: 'relative', padding: '10px 20px',
-                background: '#FFD100', border: '2px solid black',
+                position: 'relative',
+                padding: '12px 24px',
+                background: '#009BD6',
+                border: '3px solid black',
+                borderRadius: 6,
                 fontFamily: '"Barabara", "Impact", "Arial Black", sans-serif',
-                fontSize: 13, textTransform: 'uppercase',
+                fontSize: 14, textTransform: 'uppercase',
                 letterSpacing: '0.12em', cursor: 'pointer',
+                color: 'white',
                 transition: 'transform 0.15s ease',
               }}
               onMouseEnter={e => e.currentTarget.style.transform = 'translate(-2px,-2px)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'translate(0,0)'}
             >
-              View All Photos
+              View All Photos ✦
             </button>
           </div>
         </div>
@@ -279,16 +357,16 @@ export default function EventsFeature() {
         </p>
       )}
 
-      {/* ── Carousel strip ── */}
-      {/* Edge fade masks so cards disappear cleanly at viewport edges */}
+      {/* ── Carousel strip ── UNTOUCHED ── */}
+      {/* Edge fade masks */}
       <div style={{
         position: 'absolute', left: 0, top: 0, bottom: 0, width: 100, zIndex: 20,
-        background: 'linear-gradient(to right, #fcfbf7 30%, transparent)',
+        background: 'linear-gradient(to right, #FFFBEB 30%, transparent)',
         pointerEvents: 'none',
       }} />
       <div style={{
         position: 'absolute', right: 0, top: 0, bottom: 0, width: 100, zIndex: 20,
-        background: 'linear-gradient(to left, #fcfbf7 30%, transparent)',
+        background: 'linear-gradient(to left, #FFFBEB 30%, transparent)',
         pointerEvents: 'none',
       }} />
 
