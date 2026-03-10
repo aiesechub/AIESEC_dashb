@@ -503,13 +503,13 @@ const WhyGoGlobal = () => {
         style={{ zIndex: 0, backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.18) 1.5px, transparent 1.5px)', backgroundSize: '28px 28px' }} />
 
       <img ref={el => imgs.current[0] = el} src={upperLeft} alt="" className="absolute pointer-events-none"
-        style={{ width: 'clamp(560px, 62vw, 980px)', top: 'clamp(-120px, -12vw, -60px)', left: 'clamp(-120px, -12vw, -60px)', zIndex: 1, willChange: 'transform' }} />
+        style={{ width: 'clamp(560px, 70vw, 2580px)', top: 'clamp(-380px, -15vw, -60px)', left: 'clamp(-120px, -12vw, -60px)', zIndex: 1, willChange: 'transform' }} />
       <img ref={el => imgs.current[1] = el} src={upperRight} alt="" className="absolute pointer-events-none"
-        style={{ width: 'clamp(540px, 58vw, 920px)', top: 'clamp(-100px, -10vw, -50px)', right: 'clamp(-140px, -14vw, -70px)', zIndex: 1, willChange: 'transform' }} />
+        style={{ width: 'clamp(840px, 70vw, 1920px)', top: 'clamp(-150px, -30vw, -50px)', right: 'clamp(-140px, -14vw, -70px)', zIndex: 1, willChange: 'transform' }} />
       <img ref={el => imgs.current[2] = el} src={bottomLeft} alt="" className="absolute pointer-events-none"
-        style={{ width: 'clamp(580px, 64vw, 1000px)', bottom: 'clamp(-140px, -14vw, -70px)', left: 'clamp(-100px, -10vw, -50px)', zIndex: 1, willChange: 'transform' }} />
+        style={{ width: 'clamp(580px, 80vw, 2200px)', bottom: 'clamp(-120px, -12vw, -70px)', left: 'clamp(-100px, -10vw, -50px)', zIndex: 1, willChange: 'transform' }} />
       <img ref={el => imgs.current[3] = el} src={bottomRight} alt="" className="absolute pointer-events-none"
-        style={{ width: 'clamp(600px, 66vw, 1040px)', bottom: 'clamp(-120px, -12vw, -60px)', right: 'clamp(-120px, -12vw, -60px)', zIndex: 1, willChange: 'transform' }} />
+        style={{ width: 'clamp(1200px, 85vw, 1840px)', bottom: 'clamp(-180px, -12vw, -60px)', right: 'clamp(-110px, -14vw, -60px)', zIndex: 1, willChange: 'transform' }} />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="text-center mb-6">
