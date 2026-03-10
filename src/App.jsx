@@ -194,25 +194,25 @@ const Hero = ({ phase }) => {
       onMouseMove={handleMouseMove}
       className="relative min-h-screen overflow-hidden flex items-end justify-center"
     >
-      <div className="absolute inset-0 z-0" style={{ ...layer(3), opacity: phase >= 1 ? 1 : 0, transition: 'opacity 1s cubic-bezier(0.22,1,0.36,1)' }}>
+      <div className="absolute inset-0 z-0" style={{ ...layer(68), opacity: phase >= 1 ? 1 : 0, transition: 'opacity 1s cubic-bezier(0.22,1,0.36,1)' }}>
         <img src={mayonSky} alt="" className="w-full h-full object-cover" />
       </div>
 
       <div className="absolute inset-0 z-10 flex items-start justify-center"
-        style={{ ...layer(60), opacity: phase >= 4 ? 1 : 0, transition: 'opacity 1s cubic-bezier(0.22,1,0.36,1)' }}>
+        style={{ ...layer(90), opacity: phase >= 4 ? 1 : 0, transition: 'opacity 1s cubic-bezier(0.22,1,0.36,1)' }}>
         <img src={mabuhayText} alt="mabuhay" className="w-full max-w-6xl object-contain" style={{ marginTop: '5%', marginRight: '40%' , maxWidth: '30vw'}} />
       </div>
 
       <div className="absolute inset-0 z-20 flex items-end justify-center"
         style={{ opacity: phase >= 2 ? 1 : 0, transform: phase >= 2 ? 'translateY(0px)' : 'translateY(60px)', transition: 'opacity 1.1s cubic-bezier(0.22,1,0.36,1), transform 1.3s cubic-bezier(0.22,1,0.36,1)' }}>
-        <div style={{ ...layer(16), width: '100%' }}>
+        <div style={{ ...layer(58), width: '100%' }}>
           <img src={mayonCone} alt="Mayon Volcano" className="w-full object-contain object-bottom" />
         </div>
       </div>
 
       <div className="absolute inset-0 z-30 flex items-start justify-center"
-        style={{ ...layerFollow(50), opacity: phase >= 4 ? 1 : 0, transition: 'opacity 1s cubic-bezier(0.22,1,0.36,1) 0.15s' }}>
-        <img src={pilipinasText} alt="Pilipinas" className="w-full object-contain" style={{ marginTop: '12%', width: '110%', maxWidth: '73vw' }} />
+        style={{ ...layerFollow(70), opacity: phase >= 4 ? 1 : 0, transition: 'opacity 1s cubic-bezier(0.22,1,0.36,1) 0.15s' }}>
+        <img src={pilipinasText} alt="Pilipinas" className="w-full object-contain" style={{ marginTop: '11%', width: '110%', maxWidth: '73vw' }} />
       </div>
 
       <div className="absolute inset-0 z-35 pointer-events-none"
@@ -222,7 +222,7 @@ const Hero = ({ phase }) => {
 
       <div className="absolute bottom-0 left-0 w-full z-40"
         style={{ opacity: phase >= 2 ? 1 : 0, transform: phase >= 2 ? 'translateY(0px)' : 'translateY(80px)', transition: 'opacity 1.1s cubic-bezier(0.22,1,0.36,1) 0.1s, transform 1.3s cubic-bezier(0.22,1,0.36,1) 0.1s', transformOrigin: 'bottom center' }}>
-        <div style={{ transform: `translateX(${mousePos.x * 37 * -1}px) translateY(${mousePos.y * 10 * -1}px) scale(1.15)`, willChange: 'transform', transformOrigin: 'bottom center' }}>
+        <div style={{ transform: `translateX(${mousePos.x * 67 * -1}px) translateY(${mousePos.y * 10 * -1}px) scale(1.15)`, willChange: 'transform', transformOrigin: 'bottom center' }}>
           <img src={mayonLake} alt="" className="w-full block" />
         </div>
       </div>
