@@ -1,12 +1,4 @@
 // src/admin/pages/EventsManager.jsx
-// ─────────────────────────────────────────────────────────────────────────────
-// Fully inline-styled — matches the AdminApp.jsx design system exactly.
-// Changes vs previous version:
-//   • Required-field validation before save (title, date, location, tag, photo)
-//   • Custom brutalist calendar date-picker (outputs "DEC 14, 2025" format)
-//   • Delete works on both DB row AND stored image
-//   • SitePreview replaced with moving carousel (mirrors EventsFeature.jsx)
-// ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
@@ -18,18 +10,43 @@ import {
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const F = {
-  barabara:   '"Barabara", "Impact", "Arial Black", sans-serif',
+  bara:       '"Barabara", "Impact", "Arial Black", sans-serif',
   cubao:      '"Cubao", "Impact", "Arial Black", sans-serif',
   pipanganan: '"Pipanganan", "Impact", "Arial Black", sans-serif',
-  body:       'system-ui, sans-serif',
+  rounded:    '"Varela Round", system-ui, sans-serif',
+  body:       '"Inter", system-ui, sans-serif',
 };
 
-const BRAND = {
-  indigo: '#312783', red: '#EF3340', green: '#00A651',
-  yellow: '#FFD100', blue: '#009BD6', orange: '#F58220',
-  cream:  '#FFFBEB', dark: '#1a144f',
+// ── Core palette ──────────────────────────────────────────────────────────────
+const C = {
+  blue:       '#037ef3',
+  blueDark:   '#0262c0',
+  blueLight:  '#e8f3fd',
+  blueMid:    '#cce4fb',
+  navy:       '#0a1628',
+  navyMid:    '#122040',
+  white:      '#ffffff',
+  surface:    '#f8fafc',
+  border:     '#e2e8f0',
+  borderMid:  '#cbd5e1',
+  text:       '#0f172a',
+  textMid:    '#475569',
+  textMuted:  '#94a3b8',
+  green:      '#10b981',
+  greenLight: '#d1fae5',
+  red:        '#ef4444',
+  redLight:   '#fee2e2',
+  amber:      '#f59e0b',
+  amberLight: '#fef3c7',
+  // keep original brand colors for FiestaStripe & polaroid tints
+  brandRed:   '#EF3340',
+  brandYellow:'#FFD100',
+  brandGreen: '#00A651',
+  brandBlue:  '#009BD6',
+  brandOrange:'#F58220',
 };
 
+// Keep original color map for polaroid cards (unchanged)
 const COLOR_MAP = {
   yellow: { bg: '#EAB308', light: '#FEF9C3', label: 'Yellow' },
   rose:   { bg: '#F43F5E', light: '#FFF1F2', label: 'Rose'   },
@@ -53,20 +70,16 @@ const TAILWIND_TO_DEG = {
   'rotate-0': 0, 'rotate-1': 1, 'rotate-2': 2,
 };
 
-const FEATURED_LIMIT   = 10;
+const FEATURED_LIMIT    = 10;
 const LIBRARY_PAGE_SIZE = 10;
 const MODAL_PAGE_SIZE   = 10;
-
-// For the carousel tilt sequence (mirrors EventsFeature.jsx)
-const TILT_SEQUENCE = [-2, 1, -1, 2, -2, 0, 1, -1, 2, -2];
-
-const MONTHS_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const TILT_SEQUENCE     = [-2, 1, -1, 2, -2, 0, 1, -1, 2, -2];
+const MONTHS_SHORT      = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
 const EMPTY_EVENT = {
   title: '', date: '', location: '', image_url: '',
   tag: '', color: 'yellow', rotation: -1,
-  display_order: 0, is_active: true, is_featured: false,
-  description: '',
+  display_order: 0, is_active: true, is_featured: false, description: '',
 };
 
 const normalise = (row) => ({
@@ -78,21 +91,23 @@ const normalise = (row) => ({
 });
 
 const denormalise = (form) => ({ ...form });
-const getColor    = (colorKey) => COLOR_MAP[colorKey] || COLOR_MAP.yellow;
+const getColor    = (k) => COLOR_MAP[k] || COLOR_MAP.yellow;
 
-// ─── SHARED PRIMITIVES ────────────────────────────────────────────────────────
-const FiestaStripe = () => (
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+// FiestaStripe — kept exactly as brand element
+const FiestaStripe = ({ height = 5 }) => (
   <div style={{
-    height: 5, flexShrink: 0,
-    background: `linear-gradient(to right,${BRAND.red},${BRAND.yellow},${BRAND.green},${BRAND.blue},${BRAND.orange},${BRAND.red})`,
+    height, flexShrink: 0,
+    background: `linear-gradient(to right, ${C.brandRed}, ${C.brandYellow}, ${C.brandGreen}, ${C.brandBlue}, ${C.brandOrange}, ${C.brandRed})`,
   }} />
 );
 
-function Spinner({ size = 20, color = 'white' }) {
+function Spinner({ size = 20, color = C.blue }) {
   return (
     <span style={{
       width: size, height: size,
-      border: `3px solid ${color}`, borderTopColor: 'transparent',
+      border: `2px solid ${color}20`, borderTopColor: color,
       borderRadius: '50%', display: 'inline-block',
       animation: 'spin 0.7s linear infinite', flexShrink: 0,
     }} />
@@ -104,179 +119,157 @@ function Toast({ msg, type }) {
     <div style={{
       position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
       display: 'flex', alignItems: 'center', gap: 10,
-      padding: '12px 20px',
-      backgroundColor: type === 'success' ? BRAND.green : BRAND.red,
-      border: '4px solid black', boxShadow: '5px 5px 0 0 black',
-      fontFamily: F.barabara, fontSize: 14, textTransform: 'uppercase',
-      letterSpacing: '0.1em', color: 'white', animation: 'toastIn 0.3s ease',
-      maxWidth: 'calc(100vw - 48px)',
+      padding: '12px 18px',
+      backgroundColor: type === 'success' ? C.navy : C.red,
+      border: `1px solid ${type === 'success' ? C.blue : C.redLight}`,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+      fontFamily: F.rounded, fontWeight: 700, fontSize: 12,
+      color: 'white', borderRadius: 10,
+      animation: 'toastIn 0.3s ease', maxWidth: 'calc(100vw - 48px)',
     }}>
-      {type === 'success' ? '✓' : '✕'} {msg}
+      <span style={{
+        width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+        backgroundColor: type === 'success' ? C.green : C.redLight,
+        color: type === 'success' ? C.white : C.red,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10,
+      }}>{type === 'success' ? '✓' : '✕'}</span>
+      {msg}
     </div>
   );
 }
 
-// ─── PAGINATION ───────────────────────────────────────────────────────────────
 function Pagination({ page, totalPages, onPage }) {
   if (totalPages <= 1) return null;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '10px 14px', borderTop: '2px solid #f3f4f6', flexShrink: 0 }}>
-      <button onClick={() => onPage(page - 1)} disabled={page === 1}
-        style={{ width: 26, height: 26, border: '2px solid black', backgroundColor: page === 1 ? '#f3f4f6' : 'white', cursor: page === 1 ? 'not-allowed' : 'pointer', fontFamily: F.cubao, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: page === 1 ? '#d1d5db' : 'black', boxShadow: page === 1 ? 'none' : '2px 2px 0 0 black' }}>‹</button>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, padding: '10px 14px', borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+      <PaginationBtn onClick={() => onPage(page - 1)} disabled={page === 1} label="‹" />
       {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-        <button key={p} onClick={() => onPage(p)}
-          style={{ width: 22, height: 22, border: `2px solid ${p === page ? 'black' : '#e5e7eb'}`, backgroundColor: p === page ? BRAND.indigo : 'white', color: p === page ? 'white' : '#6b7280', cursor: 'pointer', fontFamily: F.barabara, fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: p === page ? '2px 2px 0 0 black' : 'none', transition: 'all 0.1s' }}>{p}</button>
+        <button key={p} onClick={() => onPage(p)} style={{
+          width: 26, height: 26, border: `1px solid ${p === page ? C.blue : C.border}`,
+          backgroundColor: p === page ? C.blue : C.white,
+          color: p === page ? C.white : C.textMuted,
+          cursor: 'pointer', fontFamily: F.rounded, fontWeight: 700, fontSize: 11,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          borderRadius: 6, transition: 'all 0.15s',
+          boxShadow: p === page ? `0 2px 6px ${C.blue}40` : 'none',
+        }}>{p}</button>
       ))}
-      <button onClick={() => onPage(page + 1)} disabled={page === totalPages}
-        style={{ width: 26, height: 26, border: '2px solid black', backgroundColor: page === totalPages ? '#f3f4f6' : 'white', cursor: page === totalPages ? 'not-allowed' : 'pointer', fontFamily: F.cubao, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: page === totalPages ? '#d1d5db' : 'black', boxShadow: page === totalPages ? 'none' : '2px 2px 0 0 black' }}>›</button>
+      <PaginationBtn onClick={() => onPage(page + 1)} disabled={page === totalPages} label="›" />
     </div>
   );
 }
 
-// ─── BRUTALIST DATE PICKER ────────────────────────────────────────────────────
-// Outputs format "DEC 14, 2025"
+function PaginationBtn({ onClick, disabled, label }) {
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      width: 28, height: 28, border: `1px solid ${disabled ? C.border : C.borderMid}`,
+      backgroundColor: disabled ? C.surface : C.white,
+      cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: F.body, fontSize: 14,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: disabled ? C.textMuted : C.text, borderRadius: 6,
+      transition: 'all 0.15s', boxShadow: disabled ? 'none' : '0 1px 3px rgba(0,0,0,0.06)',
+    }}>{label}</button>
+  );
+}
+
+// ─── MODERN DATE PICKER ────────────────────────────────────────────────────────
 function DatePicker({ value, onChange, error }) {
-  const [open,        setOpen]        = useState(false);
-  const [viewYear,    setViewYear]    = useState(() => {
-    if (value) {
-      const parts = value.split(' ');
-      return parts.length === 3 ? parseInt(parts[2]) : new Date().getFullYear();
-    }
+  const [open, setOpen] = useState(false);
+  const [viewYear, setViewYear] = useState(() => {
+    if (value) { const p = value.split(' '); return p.length === 3 ? parseInt(p[2]) : new Date().getFullYear(); }
     return new Date().getFullYear();
   });
-  const [viewMonth,   setViewMonth]   = useState(() => {
-    if (value) {
-      const parts = value.split(' ');
-      const idx = MONTHS_SHORT.indexOf(parts[0]);
-      return idx >= 0 ? idx : new Date().getMonth();
-    }
+  const [viewMonth, setViewMonth] = useState(() => {
+    if (value) { const p = value.split(' '); const idx = MONTHS_SHORT.indexOf(p[0]); return idx >= 0 ? idx : new Date().getMonth(); }
     return new Date().getMonth();
   });
   const ref = useRef();
 
-  // Close on outside click
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  // Parse selected day from value
-  const selectedDay  = value ? parseInt(value.split(' ')[1]) : null;
-  const selectedMon  = value ? MONTHS_SHORT.indexOf(value.split(' ')[0]) : null;
-  const selectedYear = value ? parseInt(value.split(' ')[2]) : null;
-
-  // Build calendar grid
-  const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
+  const selDay  = value ? parseInt(value.split(' ')[1]) : null;
+  const selMon  = value ? MONTHS_SHORT.indexOf(value.split(' ')[0]) : null;
+  const selYear = value ? parseInt(value.split(' ')[2]) : null;
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const today = new Date();
 
   const selectDay = (d) => {
-    const formatted = `${MONTHS_SHORT[viewMonth]} ${String(d).padStart(2,'0')}, ${viewYear}`;
-    onChange(formatted);
+    onChange(`${MONTHS_SHORT[viewMonth]} ${String(d).padStart(2,'0')}, ${viewYear}`);
     setOpen(false);
   };
-
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else setViewMonth(m => m - 1);
-  };
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else setViewMonth(m => m + 1);
-  };
-
-  const isSelected = (d) =>
-    selectedDay === d && selectedMon === viewMonth && selectedYear === viewYear;
-
-  const today = new Date();
-  const isToday = (d) =>
-    today.getDate() === d && today.getMonth() === viewMonth && today.getFullYear() === viewYear;
+  const prevMonth = () => { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); };
+  const nextMonth = () => { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); };
+  const isSelected = (d) => selDay === d && selMon === viewMonth && selYear === viewYear;
+  const isToday    = (d) => today.getDate() === d && today.getMonth() === viewMonth && today.getFullYear() === viewYear;
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <label style={{ display: 'block', fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', marginBottom: 5 }}>
-        Date <span style={{ color: BRAND.red }}>*</span>
-      </label>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        style={{
-          width: '100%', boxSizing: 'border-box',
-          border: `3px solid ${error ? BRAND.red : 'black'}`,
-          padding: '10px 12px', fontFamily: F.body, fontSize: 13, fontWeight: 700,
-          backgroundColor: BRAND.cream, outline: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          textAlign: 'left',
-          color: value ? 'black' : '#9ca3af',
-          boxShadow: open ? `0 0 0 3px ${BRAND.yellow}` : 'none',
-          transition: 'box-shadow 0.15s',
-        }}
-      >
+      <FieldLabel required>Date</FieldLabel>
+      <button type="button" onClick={() => setOpen(o => !o)} style={{
+        width: '100%', boxSizing: 'border-box',
+        border: `1px solid ${error ? C.red : open ? C.blue : C.border}`,
+        borderRadius: 8, padding: '9px 12px',
+        fontFamily: F.body, fontSize: 13, fontWeight: 600,
+        backgroundColor: C.white, outline: 'none', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        color: value ? C.text : C.textMuted,
+        boxShadow: open ? `0 0 0 3px ${C.blue}20` : '0 1px 3px rgba(0,0,0,0.06)',
+        transition: 'all 0.15s',
+      }}>
         <span>{value || 'Pick a date…'}</span>
         <span style={{ fontSize: 14 }}>📅</span>
       </button>
-      {error && <p style={{ fontFamily: F.barabara, fontSize: 9, color: BRAND.red, textTransform: 'uppercase', margin: '4px 0 0', letterSpacing: '0.05em' }}>✕ {error}</p>}
+      {error && <FieldError>{error}</FieldError>}
 
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 200,
-          backgroundColor: 'white', border: '4px solid black',
-          boxShadow: `6px 6px 0 0 ${BRAND.yellow}`,
-          width: 280, padding: 0, overflow: 'hidden',
+          background: 'white', border: `1px solid ${C.border}`,
+          boxShadow: '0 12px 40px rgba(0,0,0,0.14)', width: 280,
+          overflow: 'hidden', borderRadius: 12,
         }}>
-          {/* Month/Year nav */}
-          <div style={{ backgroundColor: BRAND.dark, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px' }}>
-            <button onClick={prevMonth} style={{ background: 'none', border: '2px solid rgba(255,255,255,0.25)', color: 'white', cursor: 'pointer', width: 26, height: 26, fontFamily: F.cubao, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+          <div style={{ backgroundColor: C.navy, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px' }}>
+            <CalNavBtn onClick={prevMonth}>‹</CalNavBtn>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: F.barabara, color: BRAND.yellow, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{MONTHS_SHORT[viewMonth]}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center', marginTop: 2 }}>
-                <button onClick={() => setViewYear(y => y - 1)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 10, padding: '0 2px', fontFamily: F.cubao }}>−</button>
-                <span style={{ fontFamily: F.cubao, color: 'white', fontSize: 13 }}>{viewYear}</span>
-                <button onClick={() => setViewYear(y => y + 1)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 10, padding: '0 2px', fontFamily: F.cubao }}>+</button>
+              <div style={{ fontFamily: F.bara, color: C.blue, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{MONTHS_SHORT[viewMonth]}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', marginTop: 3 }}>
+                <button onClick={() => setViewYear(y => y - 1)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontSize: 11, fontFamily: F.body }}>−</button>
+                <span style={{ fontFamily: F.body, fontWeight: 700, color: 'white', fontSize: 13 }}>{viewYear}</span>
+                <button onClick={() => setViewYear(y => y + 1)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', cursor: 'pointer', fontSize: 11, fontFamily: F.body }}>+</button>
               </div>
             </div>
-            <button onClick={nextMonth} style={{ background: 'none', border: '2px solid rgba(255,255,255,0.25)', color: 'white', cursor: 'pointer', width: 26, height: 26, fontFamily: F.cubao, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+            <CalNavBtn onClick={nextMonth}>›</CalNavBtn>
           </div>
-          <FiestaStripe />
-
-          {/* Day-of-week headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', backgroundColor: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+          <FiestaStripe height={3} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', backgroundColor: C.surface, borderBottom: `1px solid ${C.border}` }}>
             {['SU','MO','TU','WE','TH','FR','SA'].map(d => (
-              <div key={d} style={{ fontFamily: F.barabara, fontSize: 8, textAlign: 'center', padding: '5px 0', color: '#9ca3af', letterSpacing: '0.05em' }}>{d}</div>
+              <div key={d} style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 8, textAlign: 'center', padding: '6px 0', color: C.textMuted, letterSpacing: '0.05em' }}>{d}</div>
             ))}
           </div>
-
-          {/* Days grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0, padding: '6px' }}>
-            {/* Empty cells for offset */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', padding: '6px' }}>
             {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => (
-              <button
-                key={d}
-                onClick={() => selectDay(d)}
-                style={{
-                  aspectRatio: '1/1', border: isSelected(d) ? '3px solid black' : '2px solid transparent',
-                  backgroundColor: isSelected(d) ? BRAND.indigo : isToday(d) ? BRAND.cream : 'white',
-                  color: isSelected(d) ? BRAND.yellow : isToday(d) ? BRAND.indigo : '#374151',
-                  fontFamily: F.barabara, fontSize: 10,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: isSelected(d) ? '2px 2px 0 0 black' : 'none',
-                  transition: 'all 0.1s',
-                  fontWeight: isToday(d) ? 900 : 'normal',
-                }}
-                onMouseEnter={e => { if (!isSelected(d)) { e.currentTarget.style.backgroundColor = '#EEF2FF'; e.currentTarget.style.borderColor = BRAND.indigo; } }}
-                onMouseLeave={e => { if (!isSelected(d)) { e.currentTarget.style.backgroundColor = isToday(d) ? BRAND.cream : 'white'; e.currentTarget.style.borderColor = 'transparent'; } }}
-              >
-                {d}
-              </button>
+              <button key={d} onClick={() => selectDay(d)} style={{
+                aspectRatio: '1/1', border: isSelected(d) ? `2px solid ${C.blue}` : '1px solid transparent',
+                backgroundColor: isSelected(d) ? C.blue : isToday(d) ? C.blueLight : 'white',
+                color: isSelected(d) ? 'white' : isToday(d) ? C.blue : C.text,
+                fontFamily: F.rounded, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 6, transition: 'all 0.12s',
+              }}
+                onMouseEnter={e => { if (!isSelected(d)) e.currentTarget.style.backgroundColor = C.blueLight; }}
+                onMouseLeave={e => { if (!isSelected(d)) e.currentTarget.style.backgroundColor = isToday(d) ? C.blueLight : 'white'; }}
+              >{d}</button>
             ))}
           </div>
-
-          {/* Clear button */}
           {value && (
-            <div style={{ borderTop: '2px solid #e5e7eb', padding: '6px 8px' }}>
-              <button onClick={() => { onChange(''); setOpen(false); }}
-                style={{ width: '100%', padding: '6px 0', border: '2px solid #e5e7eb', fontFamily: F.barabara, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', backgroundColor: 'white', color: '#9ca3af' }}>
+            <div style={{ borderTop: `1px solid ${C.border}`, padding: '6px 8px' }}>
+              <button onClick={() => { onChange(''); setOpen(false); }} style={{ width: '100%', padding: '6px 0', border: `1px solid ${C.border}`, borderRadius: 6, fontFamily: F.rounded, fontWeight: 700, fontSize: 11, cursor: 'pointer', backgroundColor: 'white', color: C.textMuted }}>
                 ✕ Clear Date
               </button>
             </div>
@@ -287,13 +280,69 @@ function DatePicker({ value, onChange, error }) {
   );
 }
 
-// ─── PREVIEW CARD ─────────────────────────────────────────────────────────────
-function PreviewCard({ event, tiltDeg, isHovered, onMouseEnter, onMouseLeave }) {
+function CalNavBtn({ onClick, children }) {
+  return (
+    <button onClick={onClick} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', color: 'white', cursor: 'pointer', width: 28, height: 28, fontFamily: F.body, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, transition: 'all 0.15s' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
+    >{children}</button>
+  );
+}
+
+// ─── REUSABLE FORM ATOMS ──────────────────────────────────────────────────────
+function FieldLabel({ children, required }) {
+  return (
+    <label style={{ display: 'block', fontFamily: F.rounded, fontWeight: 700, fontSize: 11, letterSpacing: '0.04em', color: C.textMid, marginBottom: 5 }}>
+      {children} {required && <span style={{ color: C.red }}>*</span>}
+    </label>
+  );
+}
+
+function FieldError({ children }) {
+  return <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, color: C.red, margin: '4px 0 0' }}>✕ {children}</p>;
+}
+
+function ModernInput({ value, onChange, placeholder, error, multiline, rows }) {
+  const shared = {
+    width: '100%', boxSizing: 'border-box',
+    border: `1px solid ${error ? C.red : C.border}`,
+    borderRadius: 8, padding: '9px 12px',
+    fontFamily: F.body, fontSize: 13, fontWeight: 600,
+    backgroundColor: C.white, outline: 'none', color: C.text,
+    boxShadow: '0 1px 3px rgba(0,0,0,0.05)', transition: 'all 0.15s',
+    lineHeight: 1.5,
+  };
+  if (multiline) return (
+    <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows || 4}
+      style={{ ...shared, resize: 'vertical' }}
+      onFocus={e => { e.target.style.borderColor = C.blue; e.target.style.boxShadow = `0 0 0 3px ${C.blue}20`; }}
+      onBlur={e => { e.target.style.borderColor = error ? C.red : C.border; e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'; }}
+    />
+  );
+  return (
+    <input value={value} onChange={onChange} placeholder={placeholder}
+      style={shared}
+      onFocus={e => { e.target.style.borderColor = C.blue; e.target.style.boxShadow = `0 0 0 3px ${C.blue}20`; }}
+      onBlur={e => { e.target.style.borderColor = error ? C.red : C.border; e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'; }}
+    />
+  );
+}
+
+// ─── POLAROID PREVIEW — UNCHANGED (mirrors EventsFeature.jsx exactly) ─────────
+const B = {
+  black: '#0a0a0a', cream: '#FFFBEB',
+  indigo: '#312783', red: '#EF3340', yellow: '#FFD100', blue: '#009BD6',
+  rounded: '"Varela Round", system-ui, sans-serif',
+  bara: '"Barabara", "Impact", "Arial Black", sans-serif',
+  cubao: '"Cubao", "Impact", "Arial Black", sans-serif',
+  pipanganan: '"Pipanganan", "Impact", "Arial Black", sans-serif',
+};
+
+function PolaroidPreviewCard({ event, tiltDeg, isHovered, onMouseEnter, onMouseLeave, inCarousel }) {
   const c = getColor(event.color);
-  // If tiltDeg provided (carousel mode), use it; otherwise use event.rotation
   const deg = tiltDeg !== undefined ? tiltDeg : (event.rotation ?? 0);
-  const transform = isHovered !== undefined
-    ? (isHovered ? 'rotate(0deg) translateY(-12px) scale(1.04)' : `rotate(${deg}deg)`)
+  const transform = isHovered
+    ? 'rotate(0deg) translateY(-14px) scale(1.05)'
     : `rotate(${deg}deg)`;
 
   return (
@@ -301,157 +350,82 @@ function PreviewCard({ event, tiltDeg, isHovered, onMouseEnter, onMouseLeave }) 
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       style={{
-        transform: tiltDeg !== undefined ? undefined : `rotate(${deg}deg)`,
-        transition: 'all 0.25s', display: 'inline-block',
-        flexShrink: tiltDeg !== undefined ? 0 : undefined,
-        width: tiltDeg !== undefined ? 160 : undefined,
-        padding: tiltDeg !== undefined ? '18px 12px' : undefined,
-        cursor: tiltDeg !== undefined ? 'default' : undefined,
+        flexShrink: inCarousel ? 0 : undefined,
+        width: inCarousel ? 200 : undefined,
+        padding: inCarousel ? '20px 14px' : undefined,
+        cursor: inCarousel ? 'default' : undefined,
+        display: inCarousel ? undefined : 'inline-block',
+        transform: inCarousel ? undefined : `rotate(${deg}deg)`,
+        transition: inCarousel ? undefined : 'all 0.25s',
       }}
     >
       <div style={{
-        backgroundColor: 'white', border: '3px solid black',
-        padding: 6,
-        boxShadow: isHovered ? '8px 8px 0 0 black' : '4px 4px 0 0 black',
-        width: tiltDeg !== undefined ? '100%' : 130,
         position: 'relative',
-        transform: tiltDeg !== undefined ? transform : undefined,
-        transition: tiltDeg !== undefined ? 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease' : undefined,
-        willChange: tiltDeg !== undefined ? 'transform' : undefined,
+        background: 'white', border: `3px solid ${B.black}`, padding: 8,
+        boxShadow: isHovered ? '8px 8px 0 rgba(0,0,0,1)' : '4px 4px 0 rgba(0,0,0,0.85)',
+        width: inCarousel ? '100%' : 130,
+        transform: inCarousel ? transform : undefined,
+        transition: inCarousel ? 'transform 0.45s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease' : undefined,
+        willChange: inCarousel ? 'transform' : undefined,
       }}>
+        {/* Date badge */}
         <div style={{
-          position: 'absolute', top: -12, right: -12, zIndex: 20,
-          width: 36, height: 36, backgroundColor: 'white',
-          border: '2px solid black', borderRadius: '50%',
+          position: 'absolute', top: -14, right: -14, zIndex: 20,
+          width: 40, height: 40, background: 'white',
+          border: `2px solid ${B.black}`, borderRadius: '50%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '1px 1px 0 0 black',
+          boxShadow: `1px 1px 0 ${B.black}`,
         }}>
-          <span style={{ fontFamily: F.cubao, fontSize: 9, lineHeight: 1.1, textAlign: 'center' }}>
+          <span style={{ fontFamily: F.rounded, fontWeight: 900, fontSize: 9, lineHeight: 1.1, textAlign: 'center' }}>
             {(event.date || '—').split(' ')[0]}
           </span>
         </div>
+
+        {/* Image */}
         <div style={{
-          aspectRatio: '1/1', overflow: 'hidden', border: '2px solid black',
-          backgroundColor: c.light, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', position: 'relative',
+          position: 'relative', aspectRatio: '1/1', overflow: 'hidden',
+          border: `2px solid ${B.black}`, background: c.light,
         }}>
           {event.image_url
-            ? <img src={event.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isHovered ? 'grayscale(0%)' : 'grayscale(100%)', transform: isHovered ? 'scale(1.08)' : 'scale(1)', transition: 'filter 0.5s ease, transform 0.5s ease' }} />
-            : <span style={{ fontFamily: F.barabara, color: c.bg, fontSize: 9, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.6 }}>NO PHOTO</span>}
-          <div style={{ position: 'absolute', inset: 0, backgroundColor: c.bg, mixBlendMode: 'multiply', opacity: isHovered ? 0 : 0.2, transition: 'opacity 0.4s ease' }} />
+            ? <img src={event.image_url} alt={event.title} style={{
+                width: '100%', height: '100%', objectFit: 'cover',
+                filter: isHovered ? 'grayscale(0%)' : 'grayscale(100%)',
+                transform: isHovered ? 'scale(1.08)' : 'scale(1)',
+                transition: 'filter 0.5s ease, transform 0.5s ease',
+              }} />
+            : <div style={{
+                width: '100%', height: '100%', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                fontFamily: F.bara, fontSize: 8, textTransform: 'uppercase',
+                letterSpacing: 2, color: c.bg, opacity: 0.6,
+              }}>No Photo</div>
+          }
+          <div style={{
+            position: 'absolute', inset: 0, background: c.bg,
+            mixBlendMode: 'multiply', opacity: isHovered ? 0 : 0.18,
+            transition: 'opacity 0.4s ease',
+          }} />
         </div>
-        <div style={{ paddingTop: 7, paddingBottom: 3 }}>
+
+        {/* Text */}
+        <div style={{ padding: '10px 4px 4px' }}>
           <span style={{
-            fontFamily: F.barabara, display: 'inline-block', fontSize: 9,
-            textTransform: 'uppercase', letterSpacing: 1, color: 'white',
-            padding: '2px 5px', backgroundColor: c.bg, border: '1px solid black', marginBottom: 3,
+            display: 'inline-block', fontFamily: F.rounded, fontWeight: 800,
+            fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em',
+            color: 'white', padding: '2px 6px',
+            background: c.bg, border: `1px solid ${B.black}`, marginBottom: 4,
           }}>{event.tag || 'Tag'}</span>
-          <p style={{ fontFamily: F.pipanganan, fontSize: 12, textTransform: 'uppercase', lineHeight: 1.1, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {event.title || 'Title'}
-          </p>
-          <p style={{ fontFamily: F.body, fontSize: 9, fontWeight: 700, color: '#6b7280', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {event.location || 'Location'}
-          </p>
+          <p style={{
+            fontFamily: F.pipanganan, fontSize: inCarousel ? 14 : 12,
+            textTransform: 'uppercase', lineHeight: 1.15, margin: 0,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{event.title || 'Title'}</p>
+          <p style={{
+            fontFamily: F.rounded, fontWeight: 700, fontSize: inCarousel ? 10 : 9,
+            color: '#6b7280', margin: '3px 0 0',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{event.location || 'Location'}</p>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── SITE PREVIEW — MOVING CAROUSEL ──────────────────────────────────────────
-function SitePreview({ events }) {
-  const featured = events.filter(e => e.is_featured && e.is_active);
-  const trackRef  = useRef(null);
-  const rafRef    = useRef(null);
-  const offsetRef = useRef(0);
-  const pausedRef = useRef(false);
-  const [hoveredIdx, setHoveredIdx] = useState(null);
-  const SPEED = 0.4;
-
-  // Stable key that changes whenever the visible set or any active state changes
-  const featuredKey = featured.map(e => `${e.id}:${e.is_active}`).join(',');
-
-  // Duplicate 4× for seamless loop
-  const displayEvents = featured.length
-    ? [...featured, ...featured, ...featured, ...featured]
-    : [];
-
-  useEffect(() => {
-    if (!featured.length) return;
-    const track = trackRef.current;
-    if (!track) return;
-    // Reset position whenever the visible set changes
-    offsetRef.current = 0;
-    track.style.transform = 'translateX(0px)';
-    let loopLen = 0;
-    const measure = () => { loopLen = track.scrollWidth / 4; };
-    // Measure after paint so DOM is settled
-    const rafMeasure = requestAnimationFrame(() => { measure(); });
-    const animate = () => {
-      if (!pausedRef.current) {
-        offsetRef.current += SPEED;
-        if (loopLen > 0 && offsetRef.current >= loopLen) offsetRef.current -= loopLen;
-        track.style.transform = `translateX(-${offsetRef.current}px)`;
-      }
-      rafRef.current = requestAnimationFrame(animate);
-    };
-    rafRef.current = requestAnimationFrame(animate);
-    window.addEventListener('resize', measure);
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      cancelAnimationFrame(rafMeasure);
-      window.removeEventListener('resize', measure);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [featuredKey]);
-
-  return (
-    <div style={{ marginTop: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, paddingBottom: 12, borderBottom: '4px solid black' }}>
-        <span style={{ fontFamily: F.barabara, backgroundColor: 'black', color: BRAND.yellow, padding: '4px 14px', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.2em' }}>Site Preview</span>
-        <span style={{ fontFamily: F.body, fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Live carousel preview</span>
-      </div>
-
-      <div style={{ border: '4px solid black', backgroundColor: '#fcfbf7', backgroundImage: 'radial-gradient(#44444420 1px,transparent 1px)', backgroundSize: '15px 15px', overflow: 'hidden', position: 'relative' }}>
-        {/* Header row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '12px 16px 10px', borderBottom: '2px dashed black' }}>
-          <div>
-            <h2 style={{ fontFamily: F.barabara, margin: 0, fontSize: 20, color: BRAND.red, textTransform: 'uppercase', textShadow: '2px 2px 0 black' }}>Featured Photos</h2>
-            <p style={{ fontFamily: F.body, margin: '2px 0 0', fontSize: 8, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#475569' }}>Throwback Collection</p>
-          </div>
-          <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', inset: 0, backgroundColor: 'black', transform: 'translate(2px,2px)' }} />
-            <span style={{ fontFamily: F.barabara, position: 'relative', display: 'block', padding: '4px 10px', backgroundColor: BRAND.yellow, border: '2px solid black', fontSize: 9, textTransform: 'uppercase' }}>View All Photos</span>
-          </div>
-        </div>
-
-        {featured.length === 0 ? (
-          <p style={{ fontFamily: F.barabara, padding: '24px 0', textAlign: 'center', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#9ca3af', margin: 0 }}>
-            No starred events · click ☆ on any event to feature it
-          </p>
-        ) : (
-          <div style={{ position: 'relative', overflow: 'hidden', padding: '0' }}>
-            {/* Edge fades */}
-            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 60, zIndex: 10, background: 'linear-gradient(to right, #fcfbf7 20%, transparent)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 60, zIndex: 10, background: 'linear-gradient(to left, #fcfbf7 20%, transparent)', pointerEvents: 'none' }} />
-            <div ref={trackRef} style={{ display: 'flex', alignItems: 'center', willChange: 'transform', padding: '6px 0 14px' }}>
-              {displayEvents.map((ev, i) => {
-                const origIdx  = i % featured.length;
-                const tiltDeg  = TILT_SEQUENCE[origIdx % TILT_SEQUENCE.length];
-                return (
-                  <PreviewCard
-                    key={`${ev.id}-${i}`}
-                    event={ev}
-                    tiltDeg={tiltDeg}
-                    isHovered={hoveredIdx === i}
-                    onMouseEnter={() => { pausedRef.current = true; setHoveredIdx(i); }}
-                    onMouseLeave={() => { pausedRef.current = false; setHoveredIdx(null); }}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -460,14 +434,14 @@ function SitePreview({ events }) {
 // ─── PHOTO UPLOADER ───────────────────────────────────────────────────────────
 function PhotoUploader({ currentUrl, onUploaded, error }) {
   const [uploading, setUploading] = useState(false);
-  const [pct,       setPct]       = useState(0);
-  const [err,       setErr]       = useState('');
+  const [pct, setPct]             = useState(0);
+  const [err, setErr]             = useState('');
   const fileRef = useRef();
 
   const handleFile = async (file) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) { setErr('Please select an image file.'); return; }
-    if (file.size > 5 * 1024 * 1024)    { setErr('Image must be under 5 MB.');    return; }
+    if (file.size > 5 * 1024 * 1024)    { setErr('Image must be under 5 MB.'); return; }
     setErr(''); setUploading(true); setPct(10);
     const ticker = setInterval(() => setPct(p => Math.min(p + 15, 85)), 300);
     try {
@@ -482,44 +456,59 @@ function PhotoUploader({ currentUrl, onUploaded, error }) {
 
   return (
     <>
-      <label style={{ display: 'block', fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', marginBottom: 8 }}>
-        Photo <span style={{ color: BRAND.red }}>*</span>
-      </label>
+      <FieldLabel required>Photo</FieldLabel>
       {currentUrl && (
-        <div style={{ position: 'relative', border: '4px solid black', overflow: 'hidden', aspectRatio: '16/9', marginBottom: 12 }}>
+        <div style={{ position: 'relative', border: `1px solid ${C.border}`, overflow: 'hidden', aspectRatio: '16/9', marginBottom: 12, borderRadius: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <img src={currentUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          <button onClick={() => onUploaded('')} style={{ position: 'absolute', top: 8, right: 8, backgroundColor: BRAND.red, color: 'white', border: '3px solid black', padding: '4px 8px', fontFamily: F.barabara, fontSize: 10, cursor: 'pointer', textTransform: 'uppercase' }}>✕ Remove</button>
+          <button onClick={() => onUploaded('')} style={{
+            position: 'absolute', top: 8, right: 8, backgroundColor: C.red, color: 'white',
+            border: 'none', padding: '5px 12px',
+            fontFamily: F.rounded, fontWeight: 700, fontSize: 11, cursor: 'pointer', borderRadius: 6,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          }}>✕ Remove</button>
         </div>
       )}
       <div
         onClick={() => fileRef.current?.click()}
         onDragOver={e => e.preventDefault()}
         onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
-        style={{ border: `4px dashed ${error && !currentUrl ? BRAND.red : uploading ? BRAND.indigo : '#d1d5db'}`, padding: '30px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, cursor: 'pointer', backgroundColor: uploading ? '#EEF2FF' : BRAND.cream, transition: 'all 0.2s', textAlign: 'center' }}>
+        style={{
+          border: `2px dashed ${error && !currentUrl ? C.red : uploading ? C.blue : C.border}`,
+          borderRadius: 10, padding: '28px 20px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+          cursor: 'pointer', backgroundColor: uploading ? C.blueLight : C.surface,
+          transition: 'all 0.2s', textAlign: 'center',
+        }}
+        onMouseEnter={e => { if (!uploading) e.currentTarget.style.borderColor = C.blue; }}
+        onMouseLeave={e => { if (!uploading) e.currentTarget.style.borderColor = error && !currentUrl ? C.red : C.border; }}
+      >
         {uploading ? (
           <>
-            <Spinner size={28} color={BRAND.indigo} />
-            <p style={{ fontFamily: F.barabara, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: BRAND.indigo, margin: 0 }}>Uploading…</p>
-            <div style={{ width: '100%', height: 8, border: '2px solid black', backgroundColor: 'white' }}>
-              <div style={{ height: '100%', backgroundColor: BRAND.indigo, width: pct + '%', transition: 'width 0.3s' }} />
+            <Spinner size={26} color={C.blue} />
+            <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.blue, margin: 0 }}>Uploading…</p>
+            <div style={{ width: '100%', height: 6, backgroundColor: C.blueLight, borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', backgroundColor: C.blue, width: pct + '%', transition: 'width 0.3s', borderRadius: 99 }} />
             </div>
           </>
         ) : (
           <>
-            <span style={{ fontSize: 32 }}>📸</span>
-            <p style={{ fontFamily: F.barabara, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#374151', margin: 0 }}>{currentUrl ? 'Replace photo' : 'Drop photo here'}</p>
-            <p style={{ fontFamily: F.body, fontSize: 10, color: '#9ca3af', fontWeight: 700, margin: 0 }}>PNG · JPG · WEBP · max 5 MB · click or drag</p>
+            <div style={{ width: 48, height: 48, backgroundColor: C.blueLight, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>📸</div>
+            <div>
+              <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 12, color: C.blue, margin: '0 0 4px' }}>
+                {currentUrl ? 'Replace photo' : 'Drop photo here or click to browse'}
+              </p>
+              <p style={{ fontFamily: F.rounded, fontSize: 10, color: C.textMuted, margin: 0 }}>PNG · JPG · WEBP · max 5MB</p>
+            </div>
           </>
         )}
       </div>
       <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
-      <div style={{ marginTop: 10 }}>
-        <label style={{ display: 'block', fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', marginBottom: 5 }}>Or Paste Image URL</label>
-        <input value={currentUrl || ''} onChange={e => onUploaded(e.target.value)} placeholder="https://…"
-          style={{ width: '100%', boxSizing: 'border-box', border: `3px solid ${error && !currentUrl ? BRAND.red : 'black'}`, padding: '10px 12px', fontFamily: 'monospace', fontSize: 11, fontWeight: 700, backgroundColor: BRAND.cream, outline: 'none' }} />
+      <div style={{ marginTop: 12 }}>
+        <FieldLabel>Or paste image URL</FieldLabel>
+        <ModernInput value={currentUrl || ''} onChange={e => onUploaded(e.target.value)} placeholder="https://…" error={error && !currentUrl} />
       </div>
-      {error && !currentUrl && <p style={{ fontFamily: F.barabara, fontSize: 9, color: BRAND.red, textTransform: 'uppercase', margin: '6px 0 0', letterSpacing: '0.05em' }}>✕ {error}</p>}
-      {err && <p style={{ fontFamily: F.barabara, fontSize: 10, color: BRAND.red, textTransform: 'uppercase', margin: '6px 0 0' }}>✕ {err}</p>}
+      {error && !currentUrl && <FieldError>{error}</FieldError>}
+      {err && <FieldError>{err}</FieldError>}
     </>
   );
 }
@@ -533,153 +522,140 @@ function EventEditor({ event, onSave, onCancel, isSaving }) {
   const set = k => v => setForm(f => ({ ...f, [k]: v }));
   const c   = getColor(form.color);
 
-  // ── Validation ──────────────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
-    if (!form.title?.trim())    e.title    = 'Title is required';
-    if (!form.date?.trim())     e.date     = 'Date is required';
-    if (!form.location?.trim()) e.location = 'Location is required';
-    if (!form.tag?.trim())      e.tag      = 'Tag is required';
+    if (!form.title?.trim())     e.title    = 'Title is required';
+    if (!form.date?.trim())      e.date     = 'Date is required';
+    if (!form.location?.trim())  e.location = 'Location is required';
+    if (!form.tag?.trim())       e.tag      = 'Tag is required';
     if (!form.image_url?.trim()) e.image_url = 'Photo is required';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
-    if (validate()) onSave(form);
-  };
-
-  // Clear individual error when field is filled
   const setField = (k) => (v) => {
     set(k)(v);
     if (errors[k] && v?.trim?.()) setErrors(e => { const n = { ...e }; delete n[k]; return n; });
   };
 
+  const hasErrors = Object.keys(errors).length > 0;
   const TABS = [
-    { id: 'details', label: '① Details' },
-    { id: 'photo',   label: '② Photo'   },
-    { id: 'style',   label: '③ Style'   },
+    { id: 'details', label: 'Details',  icon: '①' },
+    { id: 'photo',   label: 'Photo',    icon: '②' },
+    { id: 'style',   label: 'Style',    icon: '③' },
   ];
 
-  const hasErrors = Object.keys(errors).length > 0;
-
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, backgroundColor: 'rgba(10,22,40,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
       <motion.div
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        style={{ width: '100%', maxWidth: 1060, backgroundColor: BRAND.cream, border: '4px solid black', borderBottom: 'none', boxShadow: `0 -8px 0 0 ${BRAND.yellow}`, height: '90vh', display: 'flex', flexDirection: 'column' }}
+        style={{ width: '100%', maxWidth: 1080, backgroundColor: C.surface, border: `1px solid ${C.border}`, borderBottom: 'none', boxShadow: '0 -24px 60px rgba(3,126,243,0.12)', height: '90vh', display: 'flex', flexDirection: 'column', borderRadius: '16px 16px 0 0', overflow: 'hidden' }}
       >
         {/* Title bar */}
-        <div style={{ display: 'flex', borderBottom: '4px solid black', flexShrink: 0 }}>
-          <div style={{ backgroundColor: BRAND.dark, padding: '0 18px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            {[BRAND.yellow, BRAND.red, BRAND.green].map((col, i) => (
-              <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: col, border: '2px solid rgba(0,0,0,0.3)' }} />
+        <div style={{ display: 'flex', background: C.navy, borderBottom: `3px solid ${C.blue}`, flexShrink: 0 }}>
+          {/* Traffic lights */}
+          <div style={{ padding: '0 18px', display: 'flex', alignItems: 'center', gap: 7, borderRight: `1px solid rgba(255,255,255,0.1)` }}>
+            {[C.brandRed, C.brandYellow, C.green].map((col, i) => (
+              <div key={i} style={{ width: 11, height: 11, borderRadius: '50%', backgroundColor: col, opacity: 0.85 }} />
             ))}
           </div>
-          <div style={{ flex: 1, backgroundColor: 'black', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontFamily: F.barabara, color: BRAND.yellow, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          {/* Title */}
+          <div style={{ flex: 1, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontFamily: F.bara, color: C.white, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               {event.id ? `✎ EDITING: ${(event.title || '').toUpperCase()}` : '✚ NEW EVENT'}
             </span>
             {hasErrors && (
-              <span style={{ fontFamily: F.barabara, fontSize: 10, backgroundColor: BRAND.red, color: 'white', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.1em', border: '2px solid rgba(255,255,255,0.3)' }}>
-                ✕ {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} required
+              <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, backgroundColor: C.red, color: 'white', padding: '3px 10px', borderRadius: 99 }}>
+                ✕ {Object.keys(errors).length} required
               </span>
             )}
           </div>
-          <div style={{ backgroundColor: BRAND.yellow, padding: '0 18px', display: 'flex', alignItems: 'center', borderLeft: '4px solid black' }}>
-            <span style={{ fontFamily: F.barabara, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'black' }}>Live Preview →</span>
+          {/* Live preview label */}
+          <div style={{ padding: '0 20px', display: 'flex', alignItems: 'center', borderLeft: `1px solid rgba(255,255,255,0.1)` }}>
+            <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.textMuted }}>Live Preview →</span>
           </div>
-          <button onClick={onCancel} style={{ backgroundColor: BRAND.red, color: 'white', border: 'none', borderLeft: '4px solid black', padding: '0 20px', fontFamily: F.barabara, fontSize: 18, cursor: 'pointer' }}>✕</button>
+          {/* Close */}
+          <button onClick={onCancel} style={{ backgroundColor: 'transparent', color: C.textMuted, border: 'none', borderLeft: `1px solid rgba(255,255,255,0.1)`, padding: '0 22px', fontSize: 20, cursor: 'pointer', transition: 'all .15s', lineHeight: 1 }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.red; e.currentTarget.style.color = 'white'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>✕</button>
         </div>
         <FiestaStripe />
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           {/* Form panel */}
-          <div style={{ width: 370, flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: '4px solid black', overflow: 'hidden' }}>
+          <div style={{ width: 380, flexShrink: 0, display: 'flex', flexDirection: 'column', borderRight: `1px solid ${C.border}`, overflow: 'hidden', backgroundColor: C.white }}>
             {/* Tabs */}
-            <div style={{ display: 'flex', borderBottom: '4px solid black', flexShrink: 0 }}>
+            <div style={{ display: 'flex', borderBottom: `1px solid ${C.border}`, flexShrink: 0, backgroundColor: C.surface }}>
               {TABS.map((t, i) => {
-                // Show error dot on tab if it has errors
                 const tabHasError =
                   (t.id === 'details' && (errors.title || errors.date || errors.location || errors.tag)) ||
                   (t.id === 'photo'   && errors.image_url);
+                const isActive = tab === t.id;
                 return (
                   <button key={t.id} onClick={() => setTab(t.id)}
-                    style={{ flex: 1, padding: '12px 0', fontFamily: F.barabara, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', border: 'none', borderRight: i < 2 ? '3px solid black' : 'none', backgroundColor: tab === t.id ? BRAND.yellow : 'white', color: tab === t.id ? 'black' : '#9ca3af', position: 'relative' }}>
-                    {t.label}
-                    {tabHasError && <span style={{ position: 'absolute', top: 6, right: 8, width: 7, height: 7, borderRadius: '50%', backgroundColor: BRAND.red, border: '1px solid white' }} />}
+                    style={{
+                      flex: 1, padding: '12px 0',
+                      fontFamily: F.rounded, fontWeight: 700, fontSize: 11, letterSpacing: '0.04em',
+                      cursor: 'pointer', border: 'none',
+                      borderBottom: isActive ? `2px solid ${C.blue}` : '2px solid transparent',
+                      backgroundColor: isActive ? C.white : 'transparent',
+                      color: isActive ? C.blue : C.textMuted, position: 'relative',
+                      transition: 'all 0.15s',
+                    }}>
+                    {t.icon} {t.label}
+                    {tabHasError && <span style={{ position: 'absolute', top: 6, right: 8, width: 6, height: 6, borderRadius: '50%', backgroundColor: C.red }} />}
                   </button>
                 );
               })}
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: 20, backgroundColor: 'white', display: 'flex', flexDirection: 'column', gap: 15 }}>
-              {tab === 'details' && (
-                <>
-                  {/* Title */}
-                  <div>
-                    <label style={{ display: 'block', fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', marginBottom: 5 }}>
-                      Event Title <span style={{ color: BRAND.red }}>*</span>
-                    </label>
-                    <input value={form.title || ''} onChange={e => setField('title')(e.target.value)} placeholder="e.g. ACAMP"
-                      style={{ width: '100%', boxSizing: 'border-box', border: `3px solid ${errors.title ? BRAND.red : 'black'}`, padding: '10px 12px', fontFamily: F.body, fontSize: 13, fontWeight: 700, backgroundColor: BRAND.cream, outline: 'none' }} />
-                    {errors.title && <p style={{ fontFamily: F.barabara, fontSize: 9, color: BRAND.red, textTransform: 'uppercase', margin: '4px 0 0', letterSpacing: '0.05em' }}>✕ {errors.title}</p>}
-                  </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {tab === 'details' && (<>
+                <div>
+                  <FieldLabel required>Event Title</FieldLabel>
+                  <ModernInput value={form.title || ''} onChange={e => setField('title')(e.target.value)} placeholder="e.g. ACAMP" error={errors.title} />
+                  {errors.title && <FieldError>{errors.title}</FieldError>}
+                </div>
 
-                  {/* Date picker */}
-                  <DatePicker value={form.date || ''} onChange={v => setField('date')(v)} error={errors.date} />
+                <DatePicker value={form.date || ''} onChange={v => setField('date')(v)} error={errors.date} />
 
-                  {/* Location */}
-                  <div>
-                    <label style={{ display: 'block', fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', marginBottom: 5 }}>
-                      Location <span style={{ color: BRAND.red }}>*</span>
-                    </label>
-                    <input value={form.location || ''} onChange={e => setField('location')(e.target.value)} placeholder="e.g. Cubao Expo"
-                      style={{ width: '100%', boxSizing: 'border-box', border: `3px solid ${errors.location ? BRAND.red : 'black'}`, padding: '10px 12px', fontFamily: F.body, fontSize: 13, fontWeight: 700, backgroundColor: BRAND.cream, outline: 'none' }} />
-                    {errors.location && <p style={{ fontFamily: F.barabara, fontSize: 9, color: BRAND.red, textTransform: 'uppercase', margin: '4px 0 0', letterSpacing: '0.05em' }}>✕ {errors.location}</p>}
-                  </div>
+                <div>
+                  <FieldLabel required>Location</FieldLabel>
+                  <ModernInput value={form.location || ''} onChange={e => setField('location')(e.target.value)} placeholder="e.g. Cubao Expo" error={errors.location} />
+                  {errors.location && <FieldError>{errors.location}</FieldError>}
+                </div>
 
-                  {/* Tag */}
-                  <div>
-                    <label style={{ display: 'block', fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', marginBottom: 5 }}>
-                      Tag / Label <span style={{ color: BRAND.red }}>*</span>
-                    </label>
-                    <input value={form.tag || ''} onChange={e => setField('tag')(e.target.value)} placeholder="e.g. AIESEC IN UST"
-                      style={{ width: '100%', boxSizing: 'border-box', border: `3px solid ${errors.tag ? BRAND.red : 'black'}`, padding: '10px 12px', fontFamily: F.body, fontSize: 13, fontWeight: 700, backgroundColor: BRAND.cream, outline: 'none' }} />
-                    {errors.tag && <p style={{ fontFamily: F.barabara, fontSize: 9, color: BRAND.red, textTransform: 'uppercase', margin: '4px 0 0', letterSpacing: '0.05em' }}>✕ {errors.tag}</p>}
-                  </div>
+                <div>
+                  <FieldLabel required>Tag / Label</FieldLabel>
+                  <ModernInput value={form.tag || ''} onChange={e => setField('tag')(e.target.value)} placeholder="e.g. AIESEC IN UST" error={errors.tag} />
+                  {errors.tag && <FieldError>{errors.tag}</FieldError>}
+                </div>
 
-                  {/* Description */}
+                <div>
+                  <FieldLabel>Description <span style={{ fontFamily: F.rounded, fontSize: 10, color: C.textMuted, fontWeight: 400, letterSpacing: 0 }}>(optional)</span></FieldLabel>
+                  <ModernInput value={form.description || ''} onChange={e => set('description')(e.target.value)} placeholder="A short summary…" multiline rows={4} />
+                  <p style={{ fontFamily: F.rounded, fontSize: 10, color: C.textMuted, margin: '4px 0 0', textAlign: 'right' }}>{(form.description || '').length} chars</p>
+                </div>
+
+                <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <label style={{ display: 'block', fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', marginBottom: 5 }}>
-                      Description <span style={{ fontFamily: F.body, fontSize: 8, color: '#9ca3af', textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
-                    </label>
-                    <textarea
-                      value={form.description || ''}
-                      onChange={e => set('description')(e.target.value)}
-                      placeholder="A short summary of the event shown on detail pages…"
-                      rows={4}
-                      style={{ width: '100%', boxSizing: 'border-box', border: '3px solid black', padding: '10px 12px', fontFamily: F.body, fontSize: 12, fontWeight: 500, backgroundColor: BRAND.cream, outline: 'none', resize: 'vertical', lineHeight: 1.5, color: '#374151' }}
-                    />
-                    <p style={{ fontFamily: F.body, fontSize: 8, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '4px 0 0', textAlign: 'right' }}>
-                      {(form.description || '').length} chars
+                    <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 11, color: C.textMid, margin: 0 }}>Visibility</p>
+                    <p style={{ fontFamily: F.rounded, fontSize: 11, fontWeight: 700, color: form.is_active ? C.green : C.textMuted, margin: '4px 0 0' }}>
+                      {form.is_active ? '● Visible on site' : '○ Hidden from site'}
                     </p>
                   </div>
-                  <div style={{ borderTop: '3px dashed #e5e7eb', paddingTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div>
-                      <p style={{ fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', margin: 0 }}>Visibility</p>
-                      <p style={{ fontFamily: F.body, fontSize: 11, fontWeight: 700, color: form.is_active ? BRAND.green : '#9ca3af', margin: '4px 0 0' }}>
-                        {form.is_active ? '● Visible on site' : '○ Hidden from site'}
-                      </p>
-                    </div>
-                    <button onClick={() => set('is_active')(!form.is_active)}
-                      style={{ padding: '8px 16px', border: '4px solid black', fontFamily: F.barabara, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', backgroundColor: form.is_active ? BRAND.green : '#e5e7eb', color: form.is_active ? 'white' : '#6b7280', boxShadow: '3px 3px 0 0 black' }}>
-                      {form.is_active ? 'LIVE' : 'HIDDEN'}
-                    </button>
-                  </div>
-                </>
-              )}
+                  <button onClick={() => set('is_active')(!form.is_active)} style={{
+                    padding: '8px 18px', border: `1px solid ${form.is_active ? C.green : C.border}`, borderRadius: 8,
+                    fontFamily: F.rounded, fontWeight: 700, fontSize: 12,
+                    cursor: 'pointer', backgroundColor: form.is_active ? C.greenLight : C.surface,
+                    color: form.is_active ? C.green : C.textMid, transition: 'all .15s',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                  }}>
+                    {form.is_active ? '● LIVE' : '○ HIDDEN'}
+                  </button>
+                </div>
+              </>)}
 
               {tab === 'photo' && (
                 <PhotoUploader
@@ -689,71 +665,103 @@ function EventEditor({ event, onSave, onCancel, isSaving }) {
                 />
               )}
 
-              {tab === 'style' && (
-                <>
+              {tab === 'style' && (<>
+                <div>
+                  <FieldLabel>Accent Color</FieldLabel>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+                    {Object.entries(COLOR_MAP).map(([key, val]) => (
+                      <button key={key} onClick={() => set('color')(key)}
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                          padding: '10px 6px', border: form.color === key ? `2px solid ${C.blue}` : `1px solid ${C.border}`,
+                          backgroundColor: form.color === key ? C.blueLight : C.white,
+                          cursor: 'pointer', borderRadius: 10, transition: 'all 0.12s',
+                          boxShadow: form.color === key ? `0 2px 8px ${C.blue}30` : '0 1px 3px rgba(0,0,0,0.05)',
+                        }}>
+                        <div style={{ width: 28, height: 28, backgroundColor: val.bg, border: `2px solid ${form.color === key ? C.blue : 'transparent'}`, borderRadius: 6 }} />
+                        <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 9, color: C.textMid }}>{val.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <FieldLabel>Card Tilt</FieldLabel>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[-2, -1, 0, 1, 2].map(r => (
+                      <button key={r} onClick={() => set('rotation')(r)}
+                        style={{
+                          flex: 1, padding: '10px 0', border: form.rotation === r ? `2px solid ${C.blue}` : `1px solid ${C.border}`,
+                          fontFamily: F.rounded, fontWeight: 700, fontSize: 12, cursor: 'pointer', borderRadius: 8,
+                          backgroundColor: form.rotation === r ? C.blue : C.white,
+                          color: form.rotation === r ? 'white' : C.textMid,
+                          boxShadow: form.rotation === r ? `0 2px 8px ${C.blue}40` : '0 1px 3px rgba(0,0,0,0.05)',
+                          transition: 'all 0.12s',
+                        }}>
+                        {r > 0 ? `+${r}°` : r === 0 ? '0°' : `${r}°`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ border: `1px solid ${C.border}`, padding: 14, backgroundColor: C.blueLight, display: 'flex', alignItems: 'center', gap: 14, borderRadius: 10, boxShadow: `0 2px 8px ${C.blue}15` }}>
+                  <div style={{ width: 44, height: 44, backgroundColor: c.bg, flexShrink: 0, borderRadius: 8 }} />
                   <div>
-                    <label style={{ display: 'block', fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', marginBottom: 10 }}>Accent Color</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
-                      {Object.entries(COLOR_MAP).map(([key, val]) => (
-                        <button key={key} onClick={() => set('color')(key)}
-                          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '10px 6px', border: form.color === key ? '4px solid black' : '3px solid #e5e7eb', backgroundColor: form.color === key ? val.light : 'white', cursor: 'pointer', boxShadow: form.color === key ? '3px 3px 0 0 black' : 'none', transition: 'all 0.12s' }}>
-                          <div style={{ width: 28, height: 28, backgroundColor: val.bg, border: '2px solid rgba(0,0,0,0.2)' }} />
-                          <span style={{ fontFamily: F.barabara, fontSize: 9, textTransform: 'uppercase', color: '#374151' }}>{val.label}</span>
-                        </button>
-                      ))}
-                    </div>
+                    <p style={{ fontFamily: F.rounded, fontWeight: 800, fontSize: 13, margin: 0, color: C.text }}>{c.label} Scheme</p>
+                    <p style={{ fontFamily: F.rounded, fontSize: 11, color: C.textMid, margin: '3px 0 0' }}>Card overlay + tag badge</p>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280', marginBottom: 10 }}>Card Tilt</label>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {[-2, -1, 0, 1, 2].map(r => (
-                        <button key={r} onClick={() => set('rotation')(r)}
-                          style={{ flex: 1, padding: '10px 0', border: form.rotation === r ? '4px solid black' : '3px solid #e5e7eb', fontFamily: F.cubao, fontSize: 13, cursor: 'pointer', backgroundColor: form.rotation === r ? BRAND.yellow : 'white', boxShadow: form.rotation === r ? '3px 3px 0 0 black' : 'none', transition: 'all 0.12s' }}>
-                          {r > 0 ? `+${r}°` : r === 0 ? '0°' : `${r}°`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ border: '4px solid black', padding: 14, backgroundColor: c.light, display: 'flex', alignItems: 'center', gap: 14 }}>
-                    <div style={{ width: 44, height: 44, backgroundColor: c.bg, border: '4px solid black', flexShrink: 0 }} />
-                    <div>
-                      <p style={{ fontFamily: F.barabara, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>{c.label} Scheme</p>
-                      <p style={{ fontFamily: F.body, fontSize: 10, color: '#6b7280', fontWeight: 700, margin: '3px 0 0' }}>Card overlay + tag badge</p>
-                    </div>
-                  </div>
-                </>
-              )}
+                </div>
+              </>)}
             </div>
 
             {/* Footer */}
-            <div style={{ display: 'flex', borderTop: '4px solid black', flexShrink: 0 }}>
+            <div style={{ display: 'flex', borderTop: `1px solid ${C.border}`, flexShrink: 0, backgroundColor: C.white }}>
               <button onClick={onCancel}
-                style={{ flex: 1, padding: 16, border: 'none', borderRight: '4px solid black', fontFamily: F.barabara, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', backgroundColor: 'white', color: '#374151' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                style={{ flex: 1, padding: 16, border: 'none', borderRight: `1px solid ${C.border}`, fontFamily: F.rounded, fontWeight: 700, fontSize: 12, cursor: 'pointer', backgroundColor: 'white', color: C.textMid, transition: 'all .12s' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = C.surface}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'white'}>
                 Cancel
               </button>
-              <button onClick={handleSave} disabled={isSaving}
-                style={{ flex: 1, padding: 16, border: 'none', fontFamily: F.barabara, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: isSaving ? 'not-allowed' : 'pointer', backgroundColor: BRAND.indigo, color: BRAND.yellow, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: isSaving ? 0.7 : 1 }}
-                onMouseEnter={e => { if (!isSaving) e.currentTarget.style.backgroundColor = '#231d5e'; }}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = BRAND.indigo}>
-                {isSaving ? <Spinner size={14} /> : '✓'}
+              <button
+                onClick={() => { if (validate()) onSave(form); }} disabled={isSaving}
+                style={{ flex: 1, padding: 16, border: 'none', fontFamily: F.rounded, fontWeight: 800, fontSize: 12, cursor: isSaving ? 'not-allowed' : 'pointer', backgroundColor: C.blue, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: isSaving ? 0.7 : 1, transition: 'filter .15s', boxShadow: `0 2px 12px ${C.blue}40` }}
+                onMouseEnter={e => { if (!isSaving) e.currentTarget.style.filter = 'brightness(1.1)'; }}
+                onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
+                {isSaving ? <Spinner size={14} color="white" /> : '✓'}
                 {isSaving ? 'Saving…' : 'Save Event'}
               </button>
             </div>
           </div>
 
-          {/* Live preview */}
+          {/* Live preview — exact replica of EventsFeature.jsx card */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 20px', borderBottom: '3px solid black', backgroundColor: 'white', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: BRAND.green }} />
-              <span style={{ fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#6b7280' }}>Live Preview — Updates As You Type</span>
-              <span style={{ marginLeft: 'auto', fontFamily: F.barabara, fontSize: 10, color: form.is_active ? BRAND.green : '#9ca3af' }}>
+            <div style={{
+              padding: '10px 20px', borderBottom: `1px solid ${C.border}`,
+              backgroundColor: C.white, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+            }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: C.green }} />
+              <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.15em', color: C.textMuted }}>
+                Live Preview — Exact Card Output
+              </span>
+              <span style={{ marginLeft: 'auto', fontFamily: F.rounded, fontWeight: 700, fontSize: 10, color: form.is_active ? C.green : C.textMuted }}>
                 {form.is_active ? '● VISIBLE ON SITE' : '○ HIDDEN'}
               </span>
             </div>
-            <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#fcfbf7', backgroundImage: 'radial-gradient(#44444422 1px,transparent 1px)', backgroundSize: '15px 15px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-              <PreviewCard event={form} />
+
+            {/* Mirrors EventsFeature.jsx section background exactly */}
+            <div style={{
+              flex: 1, overflow: 'auto',
+              backgroundColor: '#FFFBEB',
+              backgroundImage: 'radial-gradient(circle, rgba(3,126,243,0.10) 1.5px, transparent 1.5px)',
+              backgroundSize: '20px 20px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: 32,
+            }}>
+              <PolaroidPreviewCard event={form} />
+            </div>
+
+            <div style={{ padding: '10px 20px', borderTop: `1px solid ${C.border}`, background: C.surface, flexShrink: 0 }}>
+              <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 9, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                ↑ Exact replica of how this card appears in the Featured Photos carousel on the website
+              </p>
             </div>
           </div>
         </div>
@@ -769,9 +777,139 @@ function StarButton({ isFeatured, onClick, size = 'md' }) {
   return (
     <button onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       title={isFeatured ? 'Remove from Featured' : 'Add to Featured'}
-      style={{ width: sz, height: sz, border: `2px solid ${isFeatured ? '#EAB308' : hovered ? '#EAB308' : '#d1d5db'}`, backgroundColor: isFeatured ? '#FEF9C3' : hovered ? '#fffbeb' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size === 'sm' ? 12 : 14, transition: 'all 0.15s', boxShadow: isFeatured ? '2px 2px 0 0 black' : 'none', flexShrink: 0 }}>
+      style={{
+        width: sz, height: sz,
+        border: `1px solid ${isFeatured ? C.amber : hovered ? C.amber : C.border}`,
+        backgroundColor: isFeatured ? C.amberLight : hovered ? '#fffbeb' : C.white,
+        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: size === 'sm' ? 12 : 14, transition: 'all 0.15s',
+        boxShadow: isFeatured ? `0 2px 6px ${C.amber}40` : 'none',
+        flexShrink: 0, borderRadius: 6,
+      }}>
       {isFeatured ? '⭐' : '☆'}
     </button>
+  );
+}
+
+// ─── SITE PREVIEW — MOVING CAROUSEL (UNCHANGED) ───────────────────────────────
+function SitePreview({ events }) {
+  const featured  = events.filter(e => e.is_featured && e.is_active);
+  const trackRef  = useRef(null);
+  const rafRef    = useRef(null);
+  const offsetRef = useRef(0);
+  const pausedRef = useRef(false);
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const SPEED = 0.4;
+  const featuredKey = featured.map(e => `${e.id}:${e.is_active}`).join(',');
+  const displayEvents = featured.length ? [...featured, ...featured, ...featured, ...featured] : [];
+
+  useEffect(() => {
+    if (!featured.length) return;
+    const track = trackRef.current;
+    if (!track) return;
+    offsetRef.current = 0;
+    track.style.transform = 'translateX(0px)';
+    let loopLen = 0;
+    const rafMeasure = requestAnimationFrame(() => { loopLen = track.scrollWidth / 4; });
+    const animate = () => {
+      if (!pausedRef.current) {
+        offsetRef.current += SPEED;
+        if (loopLen > 0 && offsetRef.current >= loopLen) offsetRef.current -= loopLen;
+        track.style.transform = `translateX(-${offsetRef.current}px)`;
+      }
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    const measure = () => { loopLen = track.scrollWidth / 4; };
+    window.addEventListener('resize', measure);
+    return () => { cancelAnimationFrame(rafRef.current); cancelAnimationFrame(rafMeasure); window.removeEventListener('resize', measure); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [featuredKey]);
+
+  return (
+    <div style={{ marginTop: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+        <SectionBadge>Site Preview</SectionBadge>
+        <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, color: C.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Live carousel</span>
+      </div>
+
+      {/* Exactly mirrors EventsFeature.jsx section styles */}
+      <div style={{
+        border: `1px solid ${C.border}`, borderRadius: 12,
+        backgroundColor: '#FFFBEB',
+        backgroundImage: 'radial-gradient(circle, rgba(3,126,243,0.10) 1.5px, transparent 1.5px)',
+        backgroundSize: '20px 20px',
+        overflow: 'hidden', position: 'relative',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+      }}>
+        {/* Header row — mirrors EventsFeature heading */}
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+          padding: '14px 18px 12px', borderBottom: '2px dashed rgba(0,0,0,0.12)',
+        }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', marginBottom: 4 }}>
+              <span style={{
+                fontFamily: F.bara, fontSize: 9, textTransform: 'uppercase',
+                letterSpacing: '0.25em', color: B.black, background: B.yellow,
+                padding: '2px 12px', border: `2px solid ${B.black}`, borderRadius: 999,
+                boxShadow: `2px 2px 0 ${B.black}`,
+              }}>📸 Throwback Collection</span>
+            </div>
+            <h2 style={{ fontFamily: F.bara, margin: 0, fontSize: 22, color: B.red, textTransform: 'uppercase', textShadow: `2px 2px 0 ${B.black}` }}>
+              Featured <span style={{ color: B.blue }}>Photos</span>
+            </h2>
+          </div>
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', inset: 0, background: B.red, transform: 'translate(4px,4px)', borderRadius: 4, border: `2px solid ${B.black}` }} />
+            <div style={{ position: 'absolute', inset: 0, background: B.yellow, transform: 'translate(2px,2px)', borderRadius: 4, border: `2px solid ${B.black}` }} />
+            <span style={{ fontFamily: F.bara, position: 'relative', display: 'block', padding: '5px 12px', backgroundColor: B.blue, border: `2px solid ${B.black}`, fontSize: 9, textTransform: 'uppercase', color: 'white', borderRadius: 4 }}>View All Photos ✦</span>
+          </div>
+        </div>
+
+        {featured.length === 0 ? (
+          <p style={{ fontFamily: F.rounded, fontWeight: 700, padding: '28px 0', textAlign: 'center', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.textMuted, margin: 0 }}>
+            No starred events · click ☆ on any event to feature it
+          </p>
+        ) : (
+          <div style={{ position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 80, zIndex: 10, background: 'linear-gradient(to right, #FFFBEB 30%, transparent)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 80, zIndex: 10, background: 'linear-gradient(to left, #FFFBEB 30%, transparent)', pointerEvents: 'none' }} />
+            <div ref={trackRef} style={{ display: 'flex', alignItems: 'center', willChange: 'transform', padding: '6px 0 14px' }}>
+              {displayEvents.map((ev, i) => {
+                const origIdx = i % featured.length;
+                const tiltDeg = TILT_SEQUENCE[origIdx % TILT_SEQUENCE.length];
+                return (
+                  <PolaroidPreviewCard
+                    key={`${ev.id}-${i}`}
+                    event={ev}
+                    tiltDeg={tiltDeg}
+                    isHovered={hoveredIdx === i}
+                    inCarousel={true}
+                    onMouseEnter={() => { pausedRef.current = true; setHoveredIdx(i); }}
+                    onMouseLeave={() => { pausedRef.current = false; setHoveredIdx(null); }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── SECTION BADGE ────────────────────────────────────────────────────────────
+function SectionBadge({ children }) {
+  return (
+    <span style={{
+      display: 'inline-block',
+      fontFamily: F.rounded, fontWeight: 800, fontSize: 10,
+      textTransform: 'uppercase', letterSpacing: '0.12em',
+      color: C.blue, backgroundColor: C.blueLight,
+      padding: '3px 12px', borderRadius: 99,
+      border: `1px solid ${C.blueMid}`,
+    }}>{children}</span>
   );
 }
 
@@ -786,50 +924,47 @@ function EventRow({ event, idx, isFeatured, onEdit, onDelete, onToggleActive, on
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', backgroundColor: 'white', border: '4px solid black', boxShadow: hovered ? 'none' : '4px 4px 0 0 black', transform: hovered ? 'translate(4px,4px)' : 'none', transition: 'all 0.12s' }}>
-        <div style={{ cursor: 'grab', color: '#d1d5db', fontSize: 18, flexShrink: 0, lineHeight: 1 }}>⠿</div>
-        <div style={{ flexShrink: 0, width: 24 }}>
-          <div style={{ width: 24, height: 24, backgroundColor: c.bg, border: '2px solid black', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F.cubao, fontSize: 13, color: 'white' }}>{idx}</div>
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+          backgroundColor: hovered ? C.surface : C.white,
+          border: `1px solid ${hovered ? C.blue : C.border}`, borderRadius: 10,
+          boxShadow: hovered ? `0 0 0 3px ${C.blue}15, 0 4px 12px rgba(0,0,0,0.06)` : '0 1px 4px rgba(0,0,0,0.05)',
+          transition: 'all 0.15s',
+        }}>
+        <div style={{ cursor: 'grab', color: C.textMuted, fontSize: 18, flexShrink: 0, lineHeight: 1 }}>⠿</div>
+        <div style={{ flexShrink: 0, width: 26 }}>
+          <div style={{
+            width: 26, height: 26, backgroundColor: C.blue, borderRadius: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: F.rounded, fontWeight: 800, fontSize: 11, color: 'white',
+          }}>{idx}</div>
         </div>
         <StarButton isFeatured={isFeatured} onClick={() => onToggleFeatured(event)} />
-        <div style={{ width: 48, height: 48, flexShrink: 0, border: '3px solid black', overflow: 'hidden', backgroundColor: c.light, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 50, height: 50, flexShrink: 0, border: `1px solid ${C.border}`, overflow: 'hidden', backgroundColor: c.light, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }}>
           {event.image_url
             ? <img src={event.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(1)' }} />
-            : <span style={{ fontFamily: F.barabara, fontSize: 10, color: c.bg }}>?</span>}
+            : <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, color: c.bg }}>?</span>}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: F.barabara, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{event.title}</span>
-            <span style={{ fontFamily: F.barabara, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '2px 7px', backgroundColor: c.bg, color: 'white', border: '2px solid black' }}>{event.tag}</span>
+            <span style={{ fontFamily: F.pipanganan, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.text }}>{event.title}</span>
+            <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', padding: '2px 8px', backgroundColor: c.light, color: c.bg, border: `1px solid ${c.bg}20`, borderRadius: 99 }}>{event.tag}</span>
           </div>
-          <p style={{ fontFamily: F.body, fontSize: 11, fontWeight: 700, color: '#6b7280', margin: '3px 0 0' }}>{event.date} · {event.location}</p>
+          <p style={{ fontFamily: F.rounded, fontWeight: 600, fontSize: 11, color: C.textMuted, margin: '3px 0 0' }}>{event.date} · {event.location}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <button onClick={() => onToggleActive(event)}
-            style={{ padding: '6px 10px', border: '3px solid black', fontFamily: F.barabara, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', backgroundColor: event.is_active ? BRAND.green : '#e5e7eb', color: event.is_active ? 'white' : '#6b7280', boxShadow: '2px 2px 0 0 black' }}>
-            {event.is_active ? '● LIVE' : '○ HIDDEN'}
-          </button>
-          <button onClick={() => onEdit(event)}
-            style={{ padding: '6px 12px', border: '3px solid black', fontFamily: F.barabara, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', backgroundColor: BRAND.indigo, color: BRAND.yellow, boxShadow: '2px 2px 0 0 black' }}>
-            ✎ Edit
-          </button>
+          <StatusBadge active={event.is_active} onClick={() => onToggleActive(event)} />
+          <ActionBtn onClick={() => onEdit(event)} variant="primary">✎ Edit</ActionBtn>
           {confirmDel ? (
             <div style={{ display: 'flex', gap: 4 }}>
-              <button onClick={() => { setConfirmDel(false); onDelete(event); }}
-                style={{ padding: '6px 8px', border: '3px solid black', backgroundColor: BRAND.red, color: 'white', fontFamily: F.barabara, fontSize: 10, textTransform: 'uppercase', cursor: 'pointer', boxShadow: '2px 2px 0 0 black' }}>
-                ✕ Delete
-              </button>
-              <button onClick={() => setConfirmDel(false)}
-                style={{ padding: '6px 8px', border: '3px solid black', backgroundColor: 'white', fontFamily: F.barabara, fontSize: 10, textTransform: 'uppercase', cursor: 'pointer' }}>
-                Cancel
-              </button>
+              <ActionBtn onClick={() => { setConfirmDel(false); onDelete(event); }} variant="danger">✕ Delete</ActionBtn>
+              <ActionBtn onClick={() => setConfirmDel(false)} variant="ghost">Cancel</ActionBtn>
             </div>
           ) : (
-            <button onClick={() => setConfirmDel(true)}
-              style={{ padding: '6px 10px', border: '3px solid black', fontFamily: F.barabara, fontSize: 10, textTransform: 'uppercase', cursor: 'pointer', backgroundColor: 'white', color: '#d1d5db', letterSpacing: '0.1em' }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FFF0F1'; e.currentTarget.style.color = BRAND.red; e.currentTarget.style.borderColor = BRAND.red; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#d1d5db'; e.currentTarget.style.borderColor = 'black'; }}>
-              🗑 Del
+            <button onClick={() => setConfirmDel(true)} style={{ padding: '6px 10px', border: `1px solid ${C.border}`, borderRadius: 7, fontFamily: F.rounded, fontWeight: 700, fontSize: 11, cursor: 'pointer', backgroundColor: 'white', color: C.textMuted, transition: 'all .12s' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.redLight; e.currentTarget.style.color = C.red; e.currentTarget.style.borderColor = C.red; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = C.textMuted; e.currentTarget.style.borderColor = C.border; }}>
+              🗑
             </button>
           )}
         </div>
@@ -838,7 +973,85 @@ function EventRow({ event, idx, isFeatured, onEdit, onDelete, onToggleActive, on
   );
 }
 
-// ─── PHOTO LIBRARY PANEL ──────────────────────────────────────────────────────
+// ─── SMALL SHARED COMPONENTS ──────────────────────────────────────────────────
+function StatusBadge({ active, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: '6px 10px', border: `1px solid ${active ? C.green : C.border}`, borderRadius: 7,
+      fontFamily: F.rounded, fontWeight: 700, fontSize: 10,
+      cursor: 'pointer', backgroundColor: active ? C.greenLight : C.surface,
+      color: active ? C.green : C.textMuted, transition: 'all .15s',
+    }}>
+      {active ? '● LIVE' : '○ HIDDEN'}
+    </button>
+  );
+}
+
+function ActionBtn({ onClick, children, variant = 'ghost' }) {
+  const styles = {
+    primary: { bg: C.blue, color: 'white', border: C.blue, hover: C.blueDark },
+    danger:  { bg: C.red,  color: 'white', border: C.red,  hover: '#dc2626' },
+    ghost:   { bg: C.white, color: C.textMid, border: C.border, hover: C.surface },
+  }[variant];
+  return (
+    <button onClick={onClick}
+      style={{ padding: '6px 12px', border: `1px solid ${styles.border}`, borderRadius: 7, fontFamily: F.rounded, fontWeight: 700, fontSize: 11, cursor: 'pointer', backgroundColor: styles.bg, color: styles.color, boxShadow: variant === 'primary' ? `0 2px 6px ${C.blue}30` : '0 1px 3px rgba(0,0,0,0.05)', transition: 'filter .12s' }}
+      onMouseEnter={e => e.currentTarget.style.filter = 'brightness(0.9)'}
+      onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
+      {children}
+    </button>
+  );
+}
+
+// ─── LIBRARY ROW ─────────────────────────────────────────────────────────────
+function LibraryRow({ ev, c, isFeat, onEdit, onToggleActive, onToggleFeatured, onDelete }) {
+  const [hovered,    setHovered]    = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  return (
+    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      style={{ display: 'flex', gap: 12, padding: '10px 14px', borderBottom: `1px solid ${C.border}`, alignItems: 'center', backgroundColor: hovered ? C.surface : 'transparent', transition: 'background 0.1s' }}>
+      <div style={{ width: 56, height: 56, flexShrink: 0, border: `1px solid ${C.border}`, overflow: 'hidden', backgroundColor: c.light, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }}>
+        {ev.image_url ? <img src={ev.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 8, color: c.bg, textTransform: 'uppercase' }}>?</span>}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontFamily: F.pipanganan, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.text }}>{ev.title}</p>
+        <p style={{ fontFamily: F.rounded, fontSize: 10, fontWeight: 600, color: C.textMuted, margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.date} · {ev.location}</p>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', padding: '1px 7px', backgroundColor: c.light, color: c.bg, borderRadius: 99, border: `1px solid ${c.bg}20` }}>{ev.tag}</span>
+          <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 9, color: ev.is_active ? C.green : C.textMuted }}>{ev.is_active ? '● LIVE' : '○ HIDDEN'}</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
+        <StarButton isFeatured={isFeat} onClick={() => onToggleFeatured(ev)} size="sm" />
+        <LibIconBtn onClick={() => onEdit(ev)} bg={C.blue} color="white" title="Edit">✎</LibIconBtn>
+        <LibIconBtn onClick={() => onToggleActive(ev)} bg={ev.is_active ? C.greenLight : C.surface} color={ev.is_active ? C.green : C.textMuted} title="Toggle visibility">
+          {ev.is_active ? '●' : '○'}
+        </LibIconBtn>
+        {confirmDel ? (
+          <>
+            <LibIconBtn onClick={() => { setConfirmDel(false); onDelete(ev); }} bg={C.red} color="white" title="Confirm delete">✓</LibIconBtn>
+            <LibIconBtn onClick={() => setConfirmDel(false)} bg={C.surface} color={C.textMid} title="Cancel">✕</LibIconBtn>
+          </>
+        ) : (
+          <LibIconBtn onClick={() => setConfirmDel(true)} bg="white" color={C.textMuted} title="Delete"
+            hoverBg={C.redLight} hoverColor={C.red}>🗑</LibIconBtn>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LibIconBtn({ onClick, bg, color, title, children, hoverBg, hoverColor }) {
+  return (
+    <button onClick={onClick} title={title} style={{ width: 22, height: 22, backgroundColor: bg, color, border: `1px solid ${C.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, borderRadius: 5, transition: 'all .12s' }}
+      onMouseEnter={e => { if (hoverBg) { e.currentTarget.style.backgroundColor = hoverBg; e.currentTarget.style.color = hoverColor; } }}
+      onMouseLeave={e => { if (hoverBg) { e.currentTarget.style.backgroundColor = bg; e.currentTarget.style.color = color; } }}>
+      {children}
+    </button>
+  );
+}
+
+// ─── PHOTO LIBRARY ────────────────────────────────────────────────────────────
 function PhotoLibrary({ events, featuredIds, onEdit, onToggleActive, onToggleFeatured, onDelete, onOpenViewAll }) {
   const [search,      setSearch]      = useState('');
   const [filterVis,   setFilterVis]   = useState('ALL');
@@ -847,115 +1060,126 @@ function PhotoLibrary({ events, featuredIds, onEdit, onToggleActive, onToggleFea
   const [filterColor, setFilterColor] = useState('ALL');
   const [page,        setPage]        = useState(1);
 
-  const allTags = ['ALL', ...Array.from(new Set(events.map(e => e.tag).filter(Boolean)))];
-
-  const filtered = events.filter(ev => {
-    const q = search.toLowerCase();
-    const matchSearch = !q || (ev.title||'').toLowerCase().includes(q) || (ev.location||'').toLowerCase().includes(q) || (ev.tag||'').toLowerCase().includes(q) || (ev.date||'').toLowerCase().includes(q);
-    const matchVis   = filterVis   === 'ALL' || (filterVis === 'LIVE' ? ev.is_active : !ev.is_active);
-    const matchStar  = filterStar  === 'ALL' || (filterStar === 'STARRED' ? featuredIds.has(ev.id) : !featuredIds.has(ev.id));
-    const matchTag   = filterTag   === 'ALL' || ev.tag   === filterTag;
-    const matchColor = filterColor === 'ALL' || ev.color === filterColor;
-    return matchSearch && matchVis && matchStar && matchTag && matchColor;
+  const allTags    = ['ALL', ...Array.from(new Set(events.map(e => e.tag).filter(Boolean)))];
+  const filtered   = events.filter(ev => {
+    const q         = search.toLowerCase();
+    const mSearch   = !q || (ev.title||'').toLowerCase().includes(q) || (ev.location||'').toLowerCase().includes(q) || (ev.tag||'').toLowerCase().includes(q) || (ev.date||'').toLowerCase().includes(q);
+    const mVis      = filterVis   === 'ALL' || (filterVis   === 'LIVE'     ? ev.is_active          : !ev.is_active);
+    const mStar     = filterStar  === 'ALL' || (filterStar  === 'STARRED'  ? featuredIds.has(ev.id) : !featuredIds.has(ev.id));
+    const mTag      = filterTag   === 'ALL' || ev.tag   === filterTag;
+    const mColor    = filterColor === 'ALL' || ev.color === filterColor;
+    return mSearch && mVis && mStar && mTag && mColor;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / LIBRARY_PAGE_SIZE));
   const safePage   = Math.min(page, totalPages);
   const paginated  = filtered.slice((safePage - 1) * LIBRARY_PAGE_SIZE, safePage * LIBRARY_PAGE_SIZE);
-  const setFilter  = (setter) => (val) => { setter(val); setPage(1); };
+  const setFilter  = setter => val => { setter(val); setPage(1); };
   const featuredCount = events.filter(e => e.is_featured).length;
 
+  const FilterBtn = ({ active, onClick, children, activeBg = C.blue }) => (
+    <button onClick={onClick} style={{
+      padding: '4px 10px', border: `1px solid ${active ? activeBg : C.border}`,
+      fontFamily: F.rounded, fontWeight: 700, fontSize: 10,
+      cursor: 'pointer', borderRadius: 6,
+      backgroundColor: active ? activeBg : C.white,
+      color: active ? 'white' : C.textMid,
+      boxShadow: active ? `0 2px 6px ${activeBg}30` : 'none',
+      transition: 'all 0.1s',
+    }}>{children}</button>
+  );
+
   return (
-    <div style={{ width: 480, flexShrink: 0, display: 'flex', flexDirection: 'column', borderLeft: '4px solid black', backgroundColor: 'white', overflow: 'hidden' }}>
-      <div style={{ backgroundColor: BRAND.dark, padding: '12px 14px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontFamily: F.barabara, color: BRAND.yellow, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.12em' }}>📁 Photo Library</span>
-          <span style={{ fontFamily: F.cubao, color: 'white', fontSize: 18 }}>{events.length}</span>
+    <div style={{ width: 440, flexShrink: 0, display: 'flex', flexDirection: 'column', borderLeft: `1px solid ${C.border}`, backgroundColor: C.white, overflow: 'hidden' }}>
+      {/* Library header */}
+      <div style={{ background: C.navy, padding: '16px', flexShrink: 0, borderBottom: `3px solid ${C.blue}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 34, height: 34, backgroundColor: `${C.blue}25`, border: `1px solid ${C.blue}40`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>📁</div>
+            <div>
+              <p style={{ fontFamily: F.rounded, fontWeight: 800, color: C.white, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Photo Library</p>
+              <p style={{ fontFamily: F.rounded, fontSize: 10, color: 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>{events.length} total events</p>
+            </div>
+          </div>
+          <div style={{ fontFamily: F.rounded, fontWeight: 800, color: C.blue, fontSize: 28, lineHeight: 1 }}>{events.length}</div>
         </div>
-        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: F.body, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: BRAND.green, backgroundColor: 'rgba(0,166,81,0.2)', padding: '2px 7px', border: `1px solid ${BRAND.green}` }}>{events.filter(e => e.is_active).length} Live</span>
-          <span style={{ fontFamily: F.body, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9ca3af', backgroundColor: 'rgba(255,255,255,0.1)', padding: '2px 7px', border: '1px solid rgba(255,255,255,0.2)' }}>{events.length - events.filter(e => e.is_active).length} Hidden</span>
-          <span style={{ fontFamily: F.body, fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#FEF9C3', backgroundColor: 'rgba(234,179,8,0.2)', padding: '2px 7px', border: '1px solid #EAB308' }}>⭐ {featuredCount}/{FEATURED_LIMIT} Featured</span>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <LibStatChip color={C.green} bg={`${C.green}20`}>{events.filter(e => e.is_active).length} Live</LibStatChip>
+          <LibStatChip color="rgba(255,255,255,0.6)" bg="rgba(255,255,255,0.1)">{events.length - events.filter(e => e.is_active).length} Hidden</LibStatChip>
+          <LibStatChip color={C.amber} bg={`${C.amber}20`}>⭐ {featuredCount}/{FEATURED_LIMIT}</LibStatChip>
         </div>
       </div>
-      <FiestaStripe />
+      <FiestaStripe height={4} />
 
       {/* Search */}
-      <div style={{ padding: '10px 12px', borderBottom: '3px solid #e5e7eb', flexShrink: 0 }}>
-        <div style={{ position: 'relative' }}>
-          <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: '#9ca3af' }}>🔍</span>
+      <div style={{ padding: '10px 12px', borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden', transition: 'all 0.15s' }}
+          onFocus={() => {}} // handled per input
+        >
+          <span style={{ padding: '0 10px', fontSize: 13, color: C.textMuted, flexShrink: 0 }}>🔍</span>
           <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search title, tag, date…"
-            style={{ width: '100%', boxSizing: 'border-box', border: '3px solid black', padding: '8px 28px 8px 28px', fontFamily: F.body, fontSize: 11, fontWeight: 700, backgroundColor: BRAND.cream, outline: 'none' }} />
-          {search && <button onClick={() => { setSearch(''); setPage(1); }} style={{ position: 'absolute', right: 7, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 13, fontFamily: F.barabara }}>✕</button>}
+            style={{ flex: 1, padding: '8px 4px', fontFamily: F.rounded, fontSize: 12, fontWeight: 600, border: 'none', outline: 'none', background: 'transparent', color: C.text }} />
+          {search && <button onClick={() => { setSearch(''); setPage(1); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 10px', color: C.textMuted, fontSize: 14 }}>✕</button>}
         </div>
       </div>
 
       {/* Filters */}
-      <div style={{ padding: '8px 12px', borderBottom: '3px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: 7, flexShrink: 0 }}>
-        {/* Star filter row */}
+      <div style={{ padding: '8px 12px', borderBottom: `1px solid ${C.border}`, display: 'flex', flexDirection: 'column', gap: 7, flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          {[
-            { val: 'STARRED', label: '⭐ Starred',  activeBg: '#FEF9C3', activeBorder: '#EAB308', activeColor: '#78350f' },
-            { val: 'ALL',     label: '☆ All',       activeBg: 'black',   activeBorder: 'black',   activeColor: 'white'   },
-            { val: 'UNSTARRED', label: '✕ Unstarred', activeBg: '#f3f4f6', activeBorder: 'black',   activeColor: '#374151' },
-          ].map(({ val, label, activeBg, activeBorder, activeColor }) => {
-            const active = filterStar === val;
-            return (
-              <button key={val} onClick={() => setFilter(setFilterStar)(val)}
-                style={{ flex: 1, padding: '5px 0', border: `2px solid ${active ? activeBorder : '#e5e7eb'}`, fontFamily: F.barabara, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer', backgroundColor: active ? activeBg : 'white', color: active ? activeColor : '#9ca3af', boxShadow: active ? '2px 2px 0 0 black' : 'none', transition: 'all 0.1s' }}>
-                {label}
-              </button>
-            );
-          })}
+          <FilterBtn active={filterStar === 'STARRED'} onClick={() => setFilter(setFilterStar)('STARRED')} activeBg={C.amber}>⭐ Starred</FilterBtn>
+          <FilterBtn active={filterStar === 'ALL'} onClick={() => setFilter(setFilterStar)('ALL')}>☆ All</FilterBtn>
+          <FilterBtn active={filterStar === 'UNSTARRED'} onClick={() => setFilter(setFilterStar)('UNSTARRED')} activeBg="#64748b">✕ Unstarred</FilterBtn>
         </div>
-        {/* Visibility filter row */}
         <div style={{ display: 'flex', gap: 4 }}>
-          {['ALL', 'LIVE', 'HIDDEN'].map(v => {
-            const active = filterVis === v;
-            const bg  = active ? (v === 'LIVE' ? BRAND.green : v === 'HIDDEN' ? '#e5e7eb' : 'black') : 'white';
-            const col = active ? (v === 'HIDDEN' ? '#374151' : 'white') : '#9ca3af';
-            return <button key={v} onClick={() => setFilter(setFilterVis)(v)} style={{ flex: 1, padding: '5px 0', border: `2px solid ${active ? 'black' : '#e5e7eb'}`, fontFamily: F.barabara, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer', backgroundColor: bg, color: col, boxShadow: active ? '2px 2px 0 0 black' : 'none', transition: 'all 0.1s' }}>{v}</button>;
-          })}
+          {['ALL','LIVE','HIDDEN'].map(v => (
+            <FilterBtn key={v} active={filterVis === v} onClick={() => setFilter(setFilterVis)(v)}
+              activeBg={v === 'LIVE' ? C.green : v === 'HIDDEN' ? '#64748b' : C.blue}>
+              {v}
+            </FilterBtn>
+          ))}
         </div>
         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-          {allTags.map(t => {
-            const active = filterTag === t;
-            return <button key={t} onClick={() => setFilter(setFilterTag)(t)} style={{ padding: '2px 7px', border: `2px solid ${active ? 'black' : '#e5e7eb'}`, fontFamily: F.barabara, fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.04em', cursor: 'pointer', backgroundColor: active ? BRAND.indigo : 'white', color: active ? 'white' : '#6b7280', boxShadow: active ? '2px 2px 0 0 black' : 'none', transition: 'all 0.1s' }}>{t}</button>;
-          })}
+          {allTags.map(t => (
+            <FilterBtn key={t} active={filterTag === t} onClick={() => setFilter(setFilterTag)(t)}>{t}</FilterBtn>
+          ))}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{ fontFamily: F.body, fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9ca3af' }}>Color:</span>
-          <button onClick={() => setFilter(setFilterColor)('ALL')} style={{ width: 22, height: 18, border: `2px solid ${filterColor === 'ALL' ? 'black' : '#e5e7eb'}`, backgroundColor: '#374151', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: filterColor === 'ALL' ? '2px 2px 0 0 black' : 'none' }}>
-            <span style={{ fontFamily: F.barabara, fontSize: 7, color: 'white' }}>ALL</span>
-          </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, color: C.textMuted }}>Color:</span>
+          <button onClick={() => setFilter(setFilterColor)('ALL')} style={{ padding: '2px 8px', border: `1px solid ${filterColor === 'ALL' ? C.blue : C.border}`, backgroundColor: filterColor === 'ALL' ? C.blue : C.surface, cursor: 'pointer', fontFamily: F.rounded, fontWeight: 700, fontSize: 9, color: filterColor === 'ALL' ? 'white' : C.textMuted, borderRadius: 5 }}>ALL</button>
           {Object.entries(COLOR_MAP).map(([key, val]) => (
-            <button key={key} onClick={() => setFilter(setFilterColor)(key)} title={val.label} style={{ width: 18, height: 18, border: `2px solid ${filterColor === key ? 'black' : 'white'}`, backgroundColor: val.bg, cursor: 'pointer', boxShadow: filterColor === key ? '2px 2px 0 0 black' : 'none', transition: 'all 0.1s', transform: filterColor === key ? 'scale(1.15)' : 'scale(1)' }} />
+            <button key={key} onClick={() => setFilter(setFilterColor)(key)} title={val.label}
+              style={{ width: 18, height: 18, border: `2px solid ${filterColor === key ? C.blue : 'transparent'}`, backgroundColor: val.bg, cursor: 'pointer', borderRadius: 4, transform: filterColor === key ? 'scale(1.2)' : 'scale(1)', transition: 'all .1s' }} />
           ))}
         </div>
       </div>
 
-      <div style={{ padding: '4px 12px', backgroundColor: '#f9fafb', borderBottom: '2px solid #f3f4f6', flexShrink: 0 }}>
-        <span style={{ fontFamily: F.body, fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{filtered.length} of {events.length} · page {safePage}/{totalPages}</span>
+      <div style={{ padding: '5px 12px', backgroundColor: C.surface, borderBottom: `1px solid ${C.border}`, flexShrink: 0 }}>
+        <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, color: C.textMuted }}>{filtered.length} of {events.length} · page {safePage}/{totalPages}</span>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {filtered.length === 0 ? (
-          <div style={{ padding: '36px 20px', textAlign: 'center' }}>
-            <p style={{ fontFamily: F.barabara, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9ca3af', margin: 0 }}>No events found</p>
-          </div>
-        ) : paginated.map(ev => {
-          const c = getColor(ev.color);
-          const isFeat = featuredIds.has(ev.id);
-          return <LibraryRow key={ev.id} ev={ev} c={c} isFeat={isFeat} onEdit={onEdit} onToggleActive={onToggleActive} onToggleFeatured={onToggleFeatured} onDelete={onDelete} />;
-        })}
+        {filtered.length === 0
+          ? <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+              <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.textMuted, margin: 0 }}>No events found</p>
+            </div>
+          : paginated.map(ev => {
+              const c = getColor(ev.color);
+              return <LibraryRow key={ev.id} ev={ev} c={c} isFeat={featuredIds.has(ev.id)} onEdit={onEdit} onToggleActive={onToggleActive} onToggleFeatured={onToggleFeatured} onDelete={onDelete} />;
+            })
+        }
       </div>
       <Pagination page={safePage} totalPages={totalPages} onPage={setPage} />
 
-      <div style={{ borderTop: '4px solid black', padding: 10, flexShrink: 0, backgroundColor: BRAND.cream }}>
-        <button onClick={onOpenViewAll}
-          style={{ width: '100%', padding: '10px 0', border: '4px solid black', fontFamily: F.barabara, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', backgroundColor: BRAND.yellow, color: 'black', boxShadow: '3px 3px 0 0 black', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.12s' }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translate(3px,3px)'; e.currentTarget.style.boxShadow = 'none'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '3px 3px 0 0 black'; }}>
+      <div style={{ borderTop: `1px solid ${C.border}`, padding: 12, flexShrink: 0, backgroundColor: C.surface }}>
+        <button onClick={onOpenViewAll} style={{
+          width: '100%', padding: '11px 0', border: `1px solid ${C.blue}`,
+          fontFamily: F.rounded, fontWeight: 800, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em',
+          cursor: 'pointer', backgroundColor: C.blue, color: 'white',
+          boxShadow: `0 4px 14px ${C.blue}35`, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          transition: 'all .15s',
+        }}
+          onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
+          onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
           🖼 View All Photos
         </button>
       </div>
@@ -963,184 +1187,126 @@ function PhotoLibrary({ events, featuredIds, onEdit, onToggleActive, onToggleFea
   );
 }
 
-function LibraryRow({ ev, c, isFeat, onEdit, onToggleActive, onToggleFeatured, onDelete }) {
-  const [hovered,    setHovered]    = useState(false);
-  const [confirmDel, setConfirmDel] = useState(false);
+function LibStatChip({ color, bg, children }) {
   return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => { setHovered(false); }}
-      style={{ display: 'flex', gap: 12, padding: '10px 14px', borderBottom: '2px solid #f3f4f6', alignItems: 'center', backgroundColor: hovered ? '#f9fafb' : 'transparent', transition: 'background 0.1s' }}>
-      <div style={{ width: 64, height: 64, flexShrink: 0, border: '2px solid black', overflow: 'hidden', backgroundColor: c.light, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {ev.image_url ? <img src={ev.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: F.barabara, fontSize: 8, color: c.bg, textTransform: 'uppercase' }}>?</span>}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontFamily: F.barabara, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</p>
-        <p style={{ fontFamily: F.body, fontSize: 9, fontWeight: 700, color: '#6b7280', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.date} · {ev.location}</p>
-        <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-          <span style={{ fontFamily: F.barabara, fontSize: 7, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '1px 4px', backgroundColor: c.bg, color: 'white', border: '1px solid black' }}>{ev.tag}</span>
-          <span style={{ fontFamily: F.body, fontSize: 8, fontWeight: 700, color: ev.is_active ? BRAND.green : '#9ca3af' }}>{ev.is_active ? '● LIVE' : '○ HIDDEN'}</span>
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexShrink: 0 }}>
-        <StarButton isFeatured={isFeat} onClick={() => onToggleFeatured(ev)} size="sm" />
-        <button onClick={() => onEdit(ev)} style={{ width: 22, height: 22, backgroundColor: BRAND.indigo, color: BRAND.yellow, border: '2px solid black', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: F.barabara, fontSize: 10 }}>✎</button>
-        <button onClick={() => onToggleActive(ev)} style={{ width: 22, height: 22, backgroundColor: ev.is_active ? '#dcfce7' : '#f3f4f6', color: ev.is_active ? BRAND.green : '#6b7280', border: `2px solid ${ev.is_active ? BRAND.green : '#e5e7eb'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>
-          {ev.is_active ? '●' : '○'}
-        </button>
-        {confirmDel ? (
-          <>
-            <button onClick={() => { setConfirmDel(false); onDelete(ev); }}
-              style={{ width: 22, height: 22, backgroundColor: BRAND.red, color: 'white', border: '2px solid black', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontFamily: F.barabara }}
-              title="Confirm delete">✓</button>
-            <button onClick={() => setConfirmDel(false)}
-              style={{ width: 22, height: 22, backgroundColor: 'white', color: '#6b7280', border: '2px solid #e5e7eb', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}
-              title="Cancel">✕</button>
-          </>
-        ) : (
-          <button onClick={() => setConfirmDel(true)}
-            style={{ width: 22, height: 22, backgroundColor: 'white', color: '#d1d5db', border: '2px solid #e5e7eb', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, transition: 'all 0.12s' }}
-            title="Delete event"
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FFF0F1'; e.currentTarget.style.color = BRAND.red; e.currentTarget.style.borderColor = BRAND.red; }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#d1d5db'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
-            🗑
-          </button>
-        )}
-      </div>
-    </div>
+    <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, color, backgroundColor: bg, padding: '3px 10px', borderRadius: 99, border: `1px solid ${color}20` }}>{children}</span>
   );
 }
 
-// Small stateful delete button for grid cards (two-click confirm)
-function ModalDeleteButton({ ev, onDelete }) {
-  const [confirm, setConfirm] = useState(false);
-  if (confirm) {
-    return (
-      <div style={{ display: 'flex', gap: 2 }}>
-        <button onClick={() => { setConfirm(false); onDelete(ev); }}
-          style={{ padding: '4px 5px', border: '2px solid black', backgroundColor: BRAND.red, color: 'white', fontFamily: F.barabara, fontSize: 7, textTransform: 'uppercase', cursor: 'pointer', boxShadow: '2px 2px 0 0 black' }}
-          title="Confirm delete">OK</button>
-        <button onClick={() => setConfirm(false)}
-          style={{ padding: '4px 5px', border: '2px solid #e5e7eb', backgroundColor: 'white', color: '#6b7280', fontFamily: F.barabara, fontSize: 7, textTransform: 'uppercase', cursor: 'pointer' }}
-          title="Cancel">✕</button>
-      </div>
-    );
-  }
-  return (
-    <button onClick={() => setConfirm(true)}
-      style={{ padding: '4px 6px', border: '2px solid #e5e7eb', backgroundColor: 'white', color: '#d1d5db', fontSize: 10, cursor: 'pointer', transition: 'all 0.12s' }}
-      title="Delete event"
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FFF0F1'; e.currentTarget.style.color = BRAND.red; e.currentTarget.style.borderColor = BRAND.red; }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.color = '#d1d5db'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
-      🗑
-    </button>
-  );
-}
-
-// ─── VIEW ALL PHOTOS MODAL ────────────────────────────────────────────────────
+// ─── VIEW ALL MODAL ───────────────────────────────────────────────────────────
 function ViewAllModal({ events, featuredIds, onClose, onEdit, onToggleActive, onToggleFeatured, onDelete }) {
   const [search,    setSearch]    = useState('');
   const [filterVis, setFilterVis] = useState('ALL');
   const [filterTag, setFilterTag] = useState('ALL');
   const [page,      setPage]      = useState(1);
 
-  const allTags = ['ALL', ...Array.from(new Set(events.map(e => e.tag).filter(Boolean)))];
+  const allTags  = ['ALL', ...Array.from(new Set(events.map(e => e.tag).filter(Boolean)))];
   const filtered = events.filter(ev => {
     const q = search.toLowerCase();
-    const matchSearch = !q || (ev.title||'').toLowerCase().includes(q) || (ev.location||'').toLowerCase().includes(q) || (ev.tag||'').toLowerCase().includes(q) || (ev.date||'').toLowerCase().includes(q);
-    const matchVis = filterVis === 'ALL' || (filterVis === 'LIVE' ? ev.is_active : !ev.is_active);
-    const matchTag = filterTag === 'ALL' || ev.tag === filterTag;
-    return matchSearch && matchVis && matchTag;
+    const mSearch = !q || (ev.title||'').toLowerCase().includes(q) || (ev.location||'').toLowerCase().includes(q) || (ev.tag||'').toLowerCase().includes(q) || (ev.date||'').toLowerCase().includes(q);
+    const mVis    = filterVis === 'ALL' || (filterVis === 'LIVE' ? ev.is_active : !ev.is_active);
+    const mTag    = filterTag === 'ALL' || ev.tag === filterTag;
+    return mSearch && mVis && mTag;
   });
-
   const totalPages = Math.max(1, Math.ceil(filtered.length / MODAL_PAGE_SIZE));
   const safePage   = Math.min(page, totalPages);
   const paginated  = filtered.slice((safePage - 1) * MODAL_PAGE_SIZE, safePage * MODAL_PAGE_SIZE);
-  const setFilter  = (setter) => (val) => { setter(val); setPage(1); };
+  const setFilter  = setter => val => { setter(val); setPage(1); };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 60, backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, backgroundColor: 'rgba(10,22,40,0.8)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-        style={{ width: '90vw', maxWidth: 1100, height: '88vh', backgroundColor: 'white', border: '4px solid black', boxShadow: `10px 10px 0 0 ${BRAND.yellow}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', borderBottom: '4px solid black', flexShrink: 0 }}>
-          <div style={{ flex: 1, backgroundColor: 'black', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontFamily: F.barabara, color: BRAND.yellow, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.1em' }}>🖼 View All Photos</span>
-            <span style={{ fontFamily: F.cubao, color: 'white', fontSize: 14 }}>{filtered.length} / {events.length}</span>
+      <motion.div initial={{ scale: 0.96, y: 24 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 24 }} transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+        style={{ width: '90vw', maxWidth: 1100, height: '88vh', backgroundColor: C.white, border: `1px solid ${C.border}`, borderRadius: 16, boxShadow: `0 24px 60px rgba(3,126,243,0.15), 0 8px 30px rgba(0,0,0,0.18)`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', backgroundColor: C.navy, borderBottom: `3px solid ${C.blue}`, flexShrink: 0 }}>
+          <div style={{ flex: 1, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontFamily: F.bara, color: C.white, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.1em' }}>🖼 View All Photos</span>
+            <span style={{ fontFamily: F.rounded, fontWeight: 700, color: C.blue, fontSize: 13, backgroundColor: `${C.blue}20`, padding: '2px 10px', borderRadius: 99 }}>{filtered.length}/{events.length}</span>
           </div>
-          <button onClick={onClose} style={{ backgroundColor: BRAND.red, color: 'white', border: 'none', borderLeft: '4px solid black', padding: '0 20px', fontSize: 18, cursor: 'pointer' }}>✕</button>
+          <button onClick={onClose} style={{ backgroundColor: 'transparent', color: C.textMuted, border: 'none', borderLeft: `1px solid rgba(255,255,255,0.1)`, padding: '0 22px', fontSize: 20, cursor: 'pointer', transition: 'all .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = C.red; e.currentTarget.style.color = 'white'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = C.textMuted; }}>✕</button>
         </div>
         <FiestaStripe />
-        <div style={{ padding: '10px 18px', borderBottom: '3px solid black', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0, backgroundColor: 'white' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
-            <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: '#9ca3af' }}>🔍</span>
+
+        {/* Filter bar */}
+        <div style={{ padding: '10px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', flexShrink: 0, backgroundColor: C.surface }}>
+          <div style={{ flex: 1, minWidth: 160, display: 'flex', alignItems: 'center', background: C.white, border: `1px solid ${C.border}`, borderRadius: 8, overflow: 'hidden' }}>
+            <span style={{ padding: '0 10px', fontSize: 13, color: C.textMuted }}>🔍</span>
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search events…"
-              style={{ width: '100%', boxSizing: 'border-box', border: '3px solid black', padding: '7px 10px 7px 30px', fontFamily: F.body, fontSize: 11, fontWeight: 700, backgroundColor: BRAND.cream, outline: 'none' }} />
+              style={{ flex: 1, padding: '8px 4px', fontFamily: F.rounded, fontSize: 11, fontWeight: 600, border: 'none', outline: 'none', background: 'transparent', color: C.text }} />
           </div>
           <div style={{ display: 'flex', gap: 4 }}>
-            {['ALL', 'LIVE', 'HIDDEN'].map(v => {
+            {['ALL','LIVE','HIDDEN'].map(v => {
               const active = filterVis === v;
-              return <button key={v} onClick={() => setFilter(setFilterVis)(v)} style={{ padding: '6px 10px', border: `2px solid ${active ? 'black' : '#e5e7eb'}`, fontFamily: F.barabara, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer', backgroundColor: active ? (v === 'LIVE' ? BRAND.green : v === 'HIDDEN' ? '#e5e7eb' : 'black') : 'white', color: active ? (v === 'HIDDEN' ? '#374151' : 'white') : '#9ca3af', boxShadow: active ? '2px 2px 0 0 black' : 'none' }}>{v}</button>;
+              const bg = active ? (v === 'LIVE' ? C.green : v === 'HIDDEN' ? '#64748b' : C.navy) : C.white;
+              return <button key={v} onClick={() => setFilter(setFilterVis)(v)} style={{ padding: '6px 12px', border: `1px solid ${active ? 'transparent' : C.border}`, fontFamily: F.rounded, fontWeight: 700, fontSize: 10, cursor: 'pointer', borderRadius: 7, backgroundColor: bg, color: active ? 'white' : C.textMid, boxShadow: active ? '0 2px 6px rgba(0,0,0,0.12)' : 'none', transition: 'all 0.12s' }}>{v}</button>;
             })}
           </div>
-          <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {allTags.map(t => {
               const active = filterTag === t;
-              return <button key={t} onClick={() => setFilter(setFilterTag)(t)} style={{ padding: '4px 9px', border: `2px solid ${active ? 'black' : '#e5e7eb'}`, fontFamily: F.barabara, fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.06em', cursor: 'pointer', backgroundColor: active ? BRAND.indigo : 'white', color: active ? 'white' : '#6b7280', boxShadow: active ? '2px 2px 0 0 black' : 'none' }}>{t}</button>;
+              return <button key={t} onClick={() => setFilter(setFilterTag)(t)} style={{ padding: '4px 10px', border: `1px solid ${active ? C.blue : C.border}`, fontFamily: F.rounded, fontWeight: 700, fontSize: 10, cursor: 'pointer', borderRadius: 6, backgroundColor: active ? C.blue : C.white, color: active ? 'white' : C.textMid, transition: 'all 0.12s' }}>{t}</button>;
             })}
           </div>
         </div>
-        <div style={{ padding: '6px 18px', backgroundColor: '#EFF6FF', borderBottom: '2px solid #BFDBFE', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12 }}>ℹ️</span>
-            <p style={{ fontFamily: F.body, fontSize: 9, fontWeight: 700, color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Featured on homepage: ⭐ starred events (max {FEATURED_LIMIT}). All events appear here.</p>
-          </div>
-          <span style={{ fontFamily: F.body, fontSize: 9, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Page {safePage}/{totalPages}</span>
+
+        <div style={{ padding: '6px 18px', backgroundColor: C.blueLight, borderBottom: `1px solid ${C.blueMid}`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, color: C.blue, margin: 0 }}>
+            ℹ️ Featured on homepage: ⭐ starred events (max {FEATURED_LIMIT}) · All events appear here
+          </p>
+          <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 10, color: C.textMuted }}>Page {safePage}/{totalPages}</span>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 18, backgroundColor: '#f9fafb' }}>
-          {filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <p style={{ fontFamily: F.barabara, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#9ca3af' }}>No events match your filters</p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16 }}>
-              {paginated.map(ev => {
-                const c = getColor(ev.color);
-                const isFeat = featuredIds.has(ev.id);
-                return (
-                  <div key={ev.id} style={{ position: 'relative' }}>
-                    {isFeat && (
-                      <div style={{ position: 'absolute', top: -7, left: -7, zIndex: 10, backgroundColor: BRAND.yellow, border: '2px solid black', padding: '1px 6px', boxShadow: '2px 2px 0 0 black', display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <span style={{ fontSize: 8 }}>⭐</span>
-                        <span style={{ fontFamily: F.barabara, fontSize: 7, textTransform: 'uppercase' }}>Featured</span>
-                      </div>
-                    )}
-                    <div style={{ backgroundColor: 'white', border: '2px solid #e5e7eb', overflow: 'hidden' }}>
-                      <div style={{ aspectRatio: '1/1', overflow: 'hidden', backgroundColor: c.light, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {ev.image_url ? <img src={ev.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: F.barabara, fontSize: 10, color: c.bg, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.6 }}>No Photo</span>}
-                        <div style={{ position: 'absolute', top: 5, right: 5 }}>
-                          <span style={{ fontFamily: F.body, fontSize: 7, fontWeight: 700, color: 'white', backgroundColor: ev.is_active ? BRAND.green : 'rgba(0,0,0,0.4)', padding: '1px 5px' }}>{ev.is_active ? '● LIVE' : '○ HIDDEN'}</span>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: 18, backgroundColor: C.surface }}>
+          {filtered.length === 0
+            ? <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.textMuted }}>No events match filters</p>
+              </div>
+            : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14 }}>
+                {paginated.map(ev => {
+                  const c = getColor(ev.color);
+                  const isFeat = featuredIds.has(ev.id);
+                  return (
+                    <div key={ev.id} style={{ position: 'relative' }}>
+                      {isFeat && (
+                        <div style={{ position: 'absolute', top: -6, left: -6, zIndex: 10, backgroundColor: C.amberLight, border: `1px solid ${C.amber}`, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 3, borderRadius: 6, boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }}>
+                          <span style={{ fontSize: 9 }}>⭐</span>
+                          <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 8, color: C.amber }}>Featured</span>
                         </div>
-                      </div>
-                        <div style={{ padding: '7px 9px', borderTop: '2px solid #e5e7eb' }}>
-                          <span style={{ fontFamily: F.barabara, display: 'inline-block', fontSize: 7, textTransform: 'uppercase', letterSpacing: 1, color: 'white', padding: '1px 4px', backgroundColor: c.bg, border: '1px solid black', marginBottom: 3 }}>{ev.tag}</span>
-                          <p style={{ fontFamily: F.pipanganan, fontSize: 10, textTransform: 'uppercase', lineHeight: 1.1, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</p>
-                          <p style={{ fontFamily: F.body, fontSize: 8, fontWeight: 700, color: '#6b7280', margin: '2px 0 5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.date} · {ev.location}</p>
-                          <div style={{ display: 'flex', gap: 3 }}>
-                            <button onClick={() => onEdit(ev)} style={{ flex: 1, padding: '4px 0', border: '2px solid black', fontFamily: F.barabara, fontSize: 8, textTransform: 'uppercase', cursor: 'pointer', backgroundColor: BRAND.indigo, color: BRAND.yellow, boxShadow: '2px 2px 0 0 black' }}>✎ Edit</button>
-                            <StarButton isFeatured={isFeat} onClick={() => onToggleFeatured(ev)} size="sm" />
-                            <button onClick={() => onToggleActive(ev)} style={{ padding: '4px 6px', border: '2px solid black', fontFamily: F.barabara, fontSize: 8, cursor: 'pointer', backgroundColor: ev.is_active ? '#dcfce7' : '#f3f4f6', color: ev.is_active ? BRAND.green : '#6b7280', boxShadow: '2px 2px 0 0 black' }}>
-                              {ev.is_active ? '●' : '○'}
-                            </button>
-                            <ModalDeleteButton ev={ev} onDelete={onDelete} />
+                      )}
+                      <div style={{ backgroundColor: C.white, border: `1px solid ${C.border}`, overflow: 'hidden', borderRadius: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'all 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 4px 16px ${C.blue}20, 0 2px 8px rgba(0,0,0,0.08)`; e.currentTarget.style.borderColor = C.blue; }}
+                        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; e.currentTarget.style.borderColor = C.border; }}>
+                        <div style={{ aspectRatio: '1/1', overflow: 'hidden', backgroundColor: c.light, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {ev.image_url ? <img src={ev.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 9, color: c.bg, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.7 }}>No Photo</span>}
+                          <div style={{ position: 'absolute', top: 5, right: 5 }}>
+                            <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 8, color: 'white', backgroundColor: ev.is_active ? C.green : 'rgba(0,0,0,0.4)', padding: '2px 6px', borderRadius: 4 }}>{ev.is_active ? '● LIVE' : '○ HIDDEN'}</span>
                           </div>
                         </div>
+                        <div style={{ padding: '8px 10px', borderTop: `1px solid ${C.border}` }}>
+                          <span style={{ fontFamily: F.rounded, fontWeight: 800, display: 'inline-block', fontSize: 8, textTransform: 'uppercase', padding: '2px 7px', backgroundColor: c.light, color: c.bg, borderRadius: 99, marginBottom: 4 }}>{ev.tag}</span>
+                          <p style={{ fontFamily: F.pipanganan, fontSize: 11, textTransform: 'uppercase', lineHeight: 1.1, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: C.text }}>{ev.title}</p>
+                          <p style={{ fontFamily: F.rounded, fontWeight: 600, fontSize: 9, color: C.textMuted, margin: '2px 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.date} · {ev.location}</p>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button onClick={() => onEdit(ev)} style={{ flex: 1, padding: '5px 0', border: `1px solid ${C.blue}`, fontFamily: F.rounded, fontWeight: 700, fontSize: 9, cursor: 'pointer', backgroundColor: C.blue, color: 'white', borderRadius: 5, transition: 'filter .12s' }}
+                              onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.1)'}
+                              onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>✎ Edit</button>
+                            <StarButton isFeatured={isFeat} onClick={() => onToggleFeatured(ev)} size="sm" />
+                            <button onClick={() => onToggleActive(ev)} style={{ padding: '5px 7px', border: `1px solid ${C.border}`, fontFamily: F.rounded, fontWeight: 700, fontSize: 9, cursor: 'pointer', backgroundColor: ev.is_active ? C.greenLight : C.surface, color: ev.is_active ? C.green : C.textMuted, borderRadius: 5, transition: 'all .12s' }}>
+                              {ev.is_active ? '●' : '○'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+          }
         </div>
-        <div style={{ borderTop: '3px solid black', backgroundColor: 'white', flexShrink: 0 }}>
+        <div style={{ borderTop: `1px solid ${C.border}`, backgroundColor: C.white, flexShrink: 0 }}>
           <Pagination page={safePage} totalPages={totalPages} onPage={setPage} />
         </div>
       </motion.div>
@@ -1190,13 +1356,9 @@ export default function EventsManager() {
     finally       { setIsSaving(false); }
   };
 
-  // ── DELETE: removes DB row AND stored image ──────────────────────────────
   const handleDelete = async (event) => {
     try {
-      // Delete image from storage first (if it's a Supabase storage URL)
-      if (event.image_url) {
-        try { await deleteEventPhoto(event.image_url); } catch (_) { /* ok if already gone */ }
-      }
+      if (event.image_url) { try { await deleteEventPhoto(event.image_url); } catch (_) {} }
       await deleteEvent(event.id);
       setEvents(es => es.filter(e => e.id !== event.id));
       showToast('Event deleted.', 'error');
@@ -1219,8 +1381,7 @@ export default function EventsManager() {
     const currentFeatured = events.filter(e => e.is_featured);
     const isFeatured = event.is_featured;
     if (!isFeatured && currentFeatured.length >= FEATURED_LIMIT) {
-      showToast(`Max ${FEATURED_LIMIT} featured photos. Remove a ⭐ first.`, 'error');
-      return;
+      showToast(`Max ${FEATURED_LIMIT} featured. Remove a ⭐ first.`, 'error'); return;
     }
     const next = !isFeatured;
     setEvents(es => es.map(e => e.id === event.id ? { ...e, is_featured: next } : e));
@@ -1229,7 +1390,7 @@ export default function EventsManager() {
       showToast(next ? '⭐ Added to Featured!' : 'Removed from Featured.');
     } catch (err) {
       setEvents(es => es.map(e => e.id === event.id ? { ...e, is_featured: isFeatured } : e));
-      showToast(err.message || 'Failed to update.', 'error');
+      showToast(err.message || 'Failed.', 'error');
     }
   };
 
@@ -1237,7 +1398,7 @@ export default function EventsManager() {
     const reindexed = newOrder.map((e, i) => ({ ...e, display_order: i + 1 }));
     setEvents(reindexed);
     try   { await reorderEvents(reindexed.map(({ id, display_order }) => ({ id, display_order }))); }
-    catch { showToast('Failed to save new order.', 'error'); load(); }
+    catch { showToast('Failed to save order.', 'error'); load(); }
   };
 
   const featuredIds   = new Set(events.filter(e => e.is_featured).map(e => e.id));
@@ -1246,7 +1407,7 @@ export default function EventsManager() {
   const featuredCount = events.filter(e => e.is_featured).length;
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: BRAND.cream }}>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', backgroundColor: C.surface, fontFamily: F.body }}>
       <AnimatePresence>
         {editing && <EventEditor event={editing} onSave={handleSave} onCancel={() => setEditing(null)} isSaving={isSaving} />}
       </AnimatePresence>
@@ -1259,98 +1420,103 @@ export default function EventsManager() {
         )}
       </AnimatePresence>
 
-      {/* Header bar */}
-      <div style={{ margin: '14px 16px 0', flexShrink: 0 }}>
-        <div style={{ position: 'relative' }}>
-          <div style={{ position: 'absolute', inset: 0, backgroundColor: BRAND.yellow, border: '4px solid black', transform: 'translate(5px,5px)' }} />
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'stretch', border: '4px solid black', overflow: 'hidden', backgroundColor: BRAND.indigo }}>
-            <div style={{ backgroundColor: 'black', borderRight: `4px solid ${BRAND.yellow}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <span style={{ fontSize: 20, lineHeight: 1 }}>📸</span>
-              <span style={{ fontFamily: F.barabara, color: BRAND.yellow, fontSize: 18, textTransform: 'uppercase', letterSpacing: '0.1em', lineHeight: 1 }}>Event Photos</span>
+      {/* ── HEADER BAR ── */}
+      <div style={{ flexShrink: 0 }}>
+        <div style={{
+          display: 'flex', alignItems: 'stretch', minHeight: 60,
+          backgroundColor: C.navy, borderBottom: `3px solid ${C.blue}`,
+          overflow: 'hidden',
+        }}>
+          {/* Brand block */}
+          <div style={{ padding: '0 22px', display: 'flex', alignItems: 'center', gap: 12, borderRight: `1px solid rgba(255,255,255,0.1)`, flexShrink: 0 }}>
+            <div style={{ width: 36, height: 36, backgroundColor: `${C.blue}25`, border: `1px solid ${C.blue}50`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📸</div>
+            <div>
+              <div style={{ fontFamily: F.bara, color: C.white, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.1em', lineHeight: 1 }}>Event Photos</div>
+              <div style={{ fontFamily: F.rounded, fontWeight: 600, color: 'rgba(255,255,255,0.4)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.15em', marginTop: 3 }}>Photo Manager</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px', flexWrap: 'wrap' }}>
-              {[
-                { dot: BRAND.green, val: liveCount, label: 'Live', col: 'white', dimCol: 'rgba(255,255,255,0.5)' },
-                { dot: '#6b7280',   val: hiddenCount, label: 'Hidden', col: 'rgba(255,255,255,0.5)', dimCol: 'rgba(255,255,255,0.35)' },
-              ].map((s, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  {i > 0 && <div style={{ width: 1, height: 22, backgroundColor: 'rgba(255,255,255,0.15)', marginRight: 7 }} />}
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: s.dot, border: '2px solid rgba(255,255,255,0.3)', display: 'inline-block', flexShrink: 0 }} />
-                  <span style={{ fontFamily: F.cubao, fontSize: 20, color: s.col, lineHeight: 1 }}>{s.val}</span>
-                  <span style={{ fontFamily: F.body, fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: s.dimCol }}>{s.label}</span>
-                </div>
-              ))}
-              <div style={{ width: 1, height: 22, backgroundColor: 'rgba(255,255,255,0.15)' }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 14, lineHeight: 1 }}>⭐</span>
-                <span style={{ fontFamily: F.cubao, fontSize: 20, color: BRAND.yellow, lineHeight: 1 }}>{featuredCount}</span>
-                <span style={{ fontFamily: F.body, fontSize: 8, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.5)' }}>/{FEATURED_LIMIT} Featured</span>
-              </div>
-            </div>
-            <div style={{ flex: 1 }} />
-            <button onClick={load}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', backgroundColor: 'white', border: 'none', borderLeft: '4px solid black', fontFamily: F.barabara, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', color: '#374151', transition: 'all 0.12s', flexShrink: 0 }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = BRAND.cream}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'white'}>
-              ↺ Refresh
-            </button>
-            <button onClick={() => setEditing({ ...EMPTY_EVENT, display_order: events.length + 1 })}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 18px', backgroundColor: BRAND.red, color: 'white', border: 'none', borderLeft: '4px solid black', fontFamily: F.barabara, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', transition: 'all 0.12s', flexShrink: 0 }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c41a26'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = BRAND.red}>
-              ✚ Add Event
-            </button>
           </div>
+
+          {/* Stats */}
+          <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px' }}>
+            {[
+              { val: liveCount,     label: 'Live',     accent: C.green  },
+              { val: hiddenCount,   label: 'Hidden',   accent: 'rgba(255,255,255,0.35)' },
+              { val: featuredCount, label: `/ ${FEATURED_LIMIT} Featured`, accent: C.amber },
+            ].map((s, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 18px', borderRight: `1px solid rgba(255,255,255,0.08)`, height: '100%' }}>
+                <div>
+                  <div style={{ fontFamily: F.rounded, fontWeight: 800, fontSize: 22, color: s.accent, lineHeight: 1 }}>{s.val}</div>
+                  <div style={{ fontFamily: F.rounded, fontWeight: 600, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{s.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          {/* Refresh */}
+          <button onClick={load} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 18px', background: 'transparent', border: 'none', borderLeft: `1px solid rgba(255,255,255,0.08)`, fontFamily: F.rounded, fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.45)', cursor: 'pointer', transition: 'all .15s', flexShrink: 0 }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'white'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}>
+            ↺ Refresh
+          </button>
+
+          {/* Add button */}
+          <button onClick={() => setEditing({ ...EMPTY_EVENT, display_order: events.length + 1 })} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 22px', background: C.blue, color: 'white', border: 'none', borderLeft: `1px solid ${C.blueDark}`, fontFamily: F.rounded, fontWeight: 800, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer', transition: 'filter .15s', flexShrink: 0, boxShadow: `inset -1px 0 0 ${C.blueDark}` }}
+            onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.12)'}
+            onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
+            <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Add Event
+          </button>
         </div>
-        <div style={{ marginTop: 10 }}><FiestaStripe /></div>
+        <FiestaStripe height={4} />
       </div>
 
-      {/* Body */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', marginTop: 4 }}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 28px' }}>
+      {/* ── BODY ── */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', marginTop: 0 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 28px' }}>
           {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '40vh', gap: 16 }}>
-              <Spinner size={32} color={BRAND.indigo} />
-              <span style={{ fontFamily: F.barabara, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.15em', color: BRAND.indigo }}>Loading…</span>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '40vh', gap: 14 }}>
+              <Spinner size={28} color={C.blue} />
+              <span style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.12em', color: C.blue }}>Loading…</span>
             </div>
           ) : events.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <p style={{ fontFamily: F.barabara, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#9ca3af' }}>No events yet</p>
-              <button onClick={() => setEditing({ ...EMPTY_EVENT })}
-                style={{ marginTop: 12, backgroundColor: BRAND.indigo, color: BRAND.yellow, border: '4px solid black', padding: '10px 24px', fontFamily: F.barabara, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', boxShadow: '4px 4px 0 0 black' }}>
-                ✚ Add your first event
+            <div style={{ textAlign: 'center', padding: '80px 0' }}>
+              <div style={{ width: 60, height: 60, backgroundColor: C.blueLight, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, margin: '0 auto 16px' }}>📸</div>
+              <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 15, color: C.textMid, marginBottom: 6 }}>No events yet</p>
+              <p style={{ fontFamily: F.rounded, fontSize: 12, color: C.textMuted, marginBottom: 20 }}>Create your first event to get started.</p>
+              <button onClick={() => setEditing({ ...EMPTY_EVENT })} style={{ backgroundColor: C.blue, color: 'white', border: 'none', padding: '12px 28px', fontFamily: F.rounded, fontWeight: 800, fontSize: 13, cursor: 'pointer', boxShadow: `0 4px 14px ${C.blue}40`, borderRadius: 10 }}>
+                + Add your first event
               </button>
             </div>
           ) : (
             <>
               <SitePreview events={events} />
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', border: '3px dashed #d1d5db', backgroundColor: 'rgba(255,255,255,0.6)', marginBottom: 14, marginTop: 20 }}>
-                <span style={{ color: '#9ca3af', fontSize: 13 }}>↕</span>
-                <p style={{ fontFamily: F.body, fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', border: `1px dashed ${C.border}`, borderRadius: 8, backgroundColor: C.white, marginBottom: 14, marginTop: 20 }}>
+                <span style={{ color: C.textMuted, fontSize: 13 }}>↕</span>
+                <p style={{ fontFamily: F.rounded, fontWeight: 600, fontSize: 11, color: C.textMuted, margin: 0 }}>
                   {events.filter(e => e.is_featured).length} featured · Drag to reorder ·{' '}
-                  <span style={{ fontFamily: F.barabara, color: BRAND.indigo }}>✎ Edit</span> to open editor ·{' '}
-                  <span style={{ fontFamily: F.barabara, color: '#EAB308' }}>☆</span> to feature (max {FEATURED_LIMIT}) ·{' '}
-                  <span style={{ fontFamily: F.barabara, color: BRAND.red }}>🗑 Del</span> to permanently delete
+                  <span style={{ color: C.blue, fontWeight: 700 }}>✎ Edit</span> to open editor ·{' '}
+                  <span style={{ color: C.amber, fontWeight: 700 }}>☆</span> to feature (max {FEATURED_LIMIT})
                 </p>
               </div>
 
               {(() => {
-                const featuredEvents    = events.filter(e => e.is_featured);
-                const nonFeaturedCount  = events.length - featuredEvents.length;
+                const featuredEvents   = events.filter(e => e.is_featured);
+                const nonFeaturedCount = events.length - featuredEvents.length;
                 return (
                   <>
                     {featuredEvents.length === 0 ? (
-                      <div style={{ padding: '24px 0', textAlign: 'center', border: '3px dashed #d1d5db', backgroundColor: 'rgba(255,255,255,0.6)' }}>
-                        <p style={{ fontFamily: F.barabara, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#9ca3af', margin: 0 }}>
-                          No featured events yet — click ☆ on any event in the Photo Library to feature it here
+                      <div style={{ padding: '24px', textAlign: 'center', border: `1px dashed ${C.border}`, borderRadius: 10, backgroundColor: C.white }}>
+                        <p style={{ fontFamily: F.rounded, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.textMuted, margin: 0 }}>
+                          No featured events yet — click ☆ in the Photo Library to feature an event here
                         </p>
                       </div>
                     ) : (
                       <Reorder.Group axis="y" values={featuredEvents} onReorder={handleReorder}
                         style={{ display: 'flex', flexDirection: 'column', gap: 8, listStyle: 'none', padding: 0, margin: 0 }}>
                         {featuredEvents.map((ev, i) => (
-                          <EventRow key={ev.id} event={ev} idx={i + 1} isFeatured={true}
+                          <EventRow key={ev.id} event={ev} idx={i + 1} isFeatured
                             onEdit={e => setEditing({ ...e })}
                             onDelete={handleDelete}
                             onToggleActive={handleToggleActive}
@@ -1360,9 +1526,9 @@ export default function EventsManager() {
                       </Reorder.Group>
                     )}
                     {nonFeaturedCount > 0 && (
-                      <div style={{ marginTop: 10, padding: '7px 14px', border: '2px dashed #d1d5db', backgroundColor: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontFamily: F.barabara, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9ca3af' }}>
-                          📁 {nonFeaturedCount} more event{nonFeaturedCount > 1 ? 's' : ''} in the Photo Library — star them to feature here
+                      <div style={{ marginTop: 10, padding: '8px 14px', border: `1px dashed ${C.border}`, borderRadius: 8, backgroundColor: C.surface, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontFamily: F.rounded, fontWeight: 600, fontSize: 11, color: C.textMuted }}>
+                          📁 {nonFeaturedCount} more event{nonFeaturedCount > 1 ? 's' : ''} in the Photo Library — star to feature here
                         </span>
                       </div>
                     )}
@@ -1387,10 +1553,6 @@ export default function EventsManager() {
       <style>{`
         @keyframes spin    { to { transform: rotate(360deg); } }
         @keyframes toastIn { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @media (max-width: 768px) {
-          .events-body { flex-direction: column !important; }
-          .photo-library { width: 100% !important; border-left: none !important; border-top: 4px solid black !important; max-height: 400px; }
-        }
       `}</style>
     </div>
   );
