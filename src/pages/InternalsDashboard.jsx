@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabase";
-import aiesecLogo from '../../assets/logos/AIESEC-white.png';
-import EventsManager from "./EventsManager";
-import IncomingProducts from "./IncomingProducts";
-import OutgoingProducts from "./OutgoingProducts";
+import { supabase } from "../lib/supabase";
+import aiesecLogo from './../assets/logos/AIESEC-white.png';
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const F = {
@@ -29,12 +26,6 @@ const BRAND = {
 };
 
 const NOISE_SVG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`;
-
-const NAV = [
-  { id: "events",       icon: "📸", label: "Photo Collection"    },
-  { id: "incoming",     icon: "🌏", label: "Incoming Products"   },
-  { id: "outgoing",     icon: "✈️", label: "Outgoing Products"   },
-];
 
 // ─── HAMBURGER ICON ───────────────────────────────────────────────────────────
 function HamburgerIcon({ open }) {
@@ -62,9 +53,8 @@ function SidebarLogo() {
   );
 }
 
-// ─── EXTERNALS DASHBOARD ──────────────────────────────────────────────────────
-export default function ExternalsDashboard({ session, onBack }) {
-  const [activeNav,   setActiveNav]   = useState("events");
+// ─── INTERNALS DASHBOARD ──────────────────────────────────────────────────────
+export default function InternalsDashboard({ session, onBack }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile,    setIsMobile]    = useState(false);
 
@@ -78,15 +68,6 @@ export default function ExternalsDashboard({ session, onBack }) {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
-
-  const navItem  = NAV.find(n => n.id === activeNav);
-  const navLabel = navItem?.label || "";
-  const navIcon  = navItem?.icon  || "";
-
-  const handleNavSelect = (id) => {
-    setActiveNav(id);
-    if (isMobile) setSidebarOpen(false);
-  };
 
   return (
     <div style={{
@@ -122,7 +103,7 @@ export default function ExternalsDashboard({ session, onBack }) {
             <SidebarLogo />
             <div style={{ padding: "0 18px 14px", textAlign: "center" }}>
               <span style={{ fontFamily: F.barabara, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.28em", color: BRAND.textLight }}>
-                ADMIN PORTAL
+                INTERNALS
               </span>
             </div>
             <div style={{ height: 1, backgroundColor: BRAND.borderSoft, flexShrink: 0, margin: "0 14px" }} />
@@ -143,32 +124,9 @@ export default function ExternalsDashboard({ session, onBack }) {
           {sidebarOpen && (
             <p style={{ fontFamily: F.body, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.26em", color: BRAND.textLight, padding: "4px 8px 8px", margin: 0, whiteSpace: "nowrap" }}>Content</p>
           )}
-          {NAV.map(item => {
-            const active = activeNav === item.id;
-            return (
-              <button key={item.id} onClick={() => handleNavSelect(item.id)}
-                title={!sidebarOpen ? item.label : undefined}
-                style={{
-                  display: "flex", alignItems: "center",
-                  gap: sidebarOpen ? 11 : 0,
-                  justifyContent: sidebarOpen ? "flex-start" : "center",
-                  padding: sidebarOpen ? "10px 12px" : "11px 8px",
-                  border: "none", borderRadius: 12,
-                  fontFamily: F.body, fontSize: 13, fontWeight: active ? 700 : 500,
-                  cursor: "pointer",
-                  backgroundColor: active ? BRAND.blue : "transparent",
-                  color: active ? "white" : BRAND.textMid,
-                  boxShadow: active ? `3px 3px 0 0 ${BRAND.blueDark}, 0 4px 14px ${BRAND.blue}33` : "none",
-                  transition: "all 0.14s",
-                  width: "100%", textAlign: "left",
-                }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = BRAND.blueGhost; e.currentTarget.style.color = BRAND.blue; } }}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = BRAND.textMid; } }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{item.icon}</span>
-                {sidebarOpen && <span style={{ flex: 1, lineHeight: 1.35 }}>{item.label}</span>}
-              </button>
-            );
-          })}
+          <p style={{ fontFamily: F.body, fontSize: 12, color: BRAND.textMid, padding: "10px 12px", margin: 0 }}>
+            {sidebarOpen ? "Categories coming soon" : "..."}
+          </p>
         </nav>
 
         {/* User / back button */}
@@ -239,10 +197,7 @@ export default function ExternalsDashboard({ session, onBack }) {
             <div style={{ backgroundColor: BRAND.blue, padding: "5px 12px", borderRadius: 10, display: "flex", alignItems: "center", boxShadow: `0 3px 10px ${BRAND.blue}33` }}>
               <img src={aiesecLogo} alt="AIESEC PH" style={{ height: "1.1rem", width: "auto", objectFit: "contain" }} />
             </div>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-              <span style={{ fontSize: 15 }}>{navIcon}</span>
-              <span style={{ fontFamily: F.body, color: BRAND.text, fontSize: 14, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{navLabel}</span>
-            </div>
+            <div style={{ flex: 1, fontSize: 14, fontWeight: 700, color: BRAND.text }}>Internals</div>
             <button onClick={onBack}
               style={{ backgroundColor: BRAND.white, border: `1.5px solid ${BRAND.border}`, borderRadius: 8, padding: "6px 8px", fontFamily: F.body, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", cursor: "pointer", color: BRAND.textLight, flexShrink: 0, boxShadow: `2px 2px 0 0 ${BRAND.border}` }}>
               ↲ Back
@@ -250,9 +205,17 @@ export default function ExternalsDashboard({ session, onBack }) {
           </div>
         )}
 
-        {activeNav === "events"    && <EventsManager />}
-        {activeNav === "incoming"  && <IncomingProducts />}
-        {activeNav === "outgoing"  && <OutgoingProducts />}
+        {/* Placeholder content */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <div style={{ textAlign: "center" }}>
+            <h2 style={{ fontFamily: F.barabara, fontSize: 24, margin: "0 0 12px 0", color: BRAND.text }}>
+              Internals
+            </h2>
+            <p style={{ fontFamily: F.body, fontSize: 14, color: BRAND.textLight, maxWidth: 400 }}>
+              Internals dashboard is coming soon. Categories and content will be added shortly.
+            </p>
+          </div>
+        </div>
       </main>
 
       <style>{`

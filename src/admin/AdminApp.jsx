@@ -4,11 +4,11 @@ import aiesecLogo from '.././assets/logos/AIESEC-white.png';
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
-import EventsManager      from "./pages/EventsManager";
-import IncomingProducts    from "./pages/IncomingProducts";
-import OutgoingProducts    from "./pages/OutgoingProducts";
-import ExternalsDashboard from "./pages/ExternalsDashboard";
-import InternalsDashboard from "./pages/InternalsDashboard";
+import EventsManager      from "../pages/EventsManager";
+import IncomingProducts    from "../pages/Opportunities";
+import OutgoingProducts    from "../pages/OutgoingProducts";
+import ExternalsDashboard from "../pages/ExternalsDashboard";
+import InternalsDashboard from "../pages/InternalsDashboard";
 
 const F = {
   barabara: '"Barabara", "Impact", "Arial Black", sans-serif',

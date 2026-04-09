@@ -6,7 +6,7 @@ import {
   getAllEvents, createEvent, updateEvent,
   deleteEvent, reorderEvents,
   uploadEventPhoto, deleteEventPhoto,
-} from '../../lib/supabase';
+} from '../lib/supabase';
 
 // ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
 const F = {

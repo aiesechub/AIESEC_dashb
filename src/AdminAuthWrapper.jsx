@@ -3,13 +3,13 @@
 // OWASP: A01 (Broken Access Control), A07 (Authentication Failures)
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from './lib/supabase';
 import {
   setupSessionSecurity,
   verifyAdminRole,
   setupSecurityHeaders,
   checkRateLimit,
-} from '../lib/securityUtils';
+} from './lib/securityUtils';
 import LoadingScreen from '../components/LoadingScreen';
 
 /**
