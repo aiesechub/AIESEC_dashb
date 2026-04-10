@@ -1,42 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import aiesecLogo from './../assets/logos/AIESEC-white.png';
-
-// ─── DESIGN TOKENS ────────────────────────────────────────────────────────────
-const F = {
-  barabara: '"Barabara", "Impact", "Arial Black", sans-serif',
-  body:     '"Inter", system-ui, sans-serif',
-};
-
-const BRAND = {
-  blue:       "#037ef3",
-  blueDark:   "#0260c4",
-  blueLight:  "#e8f3ff",
-  blueMid:    "#b8d9fd",
-  blueGhost:  "#f0f7ff",
-  white:      "#ffffff",
-  offWhite:   "#f4f7fc",
-  border:     "#dce8fb",
-  borderSoft: "#eaf2ff",
-  text:       "#0d1f3c",
-  textMid:    "#3a547a",
-  textLight:  "#8eaacb",
-  danger:     "#e53935",
-  sidebar:    "#ffffff",
-};
-
-const NOISE_SVG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E")`;
-
-// ─── HAMBURGER ICON ───────────────────────────────────────────────────────────
-function HamburgerIcon({ open }) {
-  return (
-    <div style={{ width: 16, height: 12, position: "relative", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-      <span style={{ display: "block", width: 16, height: 2, backgroundColor: BRAND.blue, borderRadius: 2, transition: "transform 0.22s", transform: open ? "translateY(5px) rotate(45deg)" : "none", transformOrigin: "center" }} />
-      <span style={{ display: "block", width: 16, height: 2, backgroundColor: BRAND.blue, borderRadius: 2, opacity: open ? 0 : 1, transition: "opacity 0.15s" }} />
-      <span style={{ display: "block", width: 16, height: 2, backgroundColor: BRAND.blue, borderRadius: 2, transition: "transform 0.22s", transform: open ? "translateY(-5px) rotate(-45deg)" : "none", transformOrigin: "center" }} />
-    </div>
-  );
-}
+import { F, BRAND, NOISE_SVG, HamburgerIcon } from "../lib/constants.jsx";
 
 // ─── SIDEBAR LOGO ─────────────────────────────────────────────────────────────
 function SidebarLogo() {

@@ -2,7 +2,7 @@
 // CRUD admin dashboard for the `opportunities` table.
 // Schema: opportunity_id, title, location, direction, external_link, program_id, created_at, is_active
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Plus, Pencil, Trash2, X, Save, Search, RefreshCw,
@@ -159,7 +159,7 @@ function DirectionBadge({ direction }) {
 }
 
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
-export default function OpportunitiesManager() {
+const OpportunitiesManager = forwardRef(function OpportunitiesManager(props, ref) {
   const [opps, setOpps] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -172,6 +172,10 @@ export default function OpportunitiesManager() {
   const [filterDirection, setFilterDirection] = useState('');
   const [filterActive, setFilterActive] = useState('');
   const [toast, setToast] = useState(null);
+
+  useImperativeHandle(ref, () => ({
+    add: () => openNew()
+  }), []);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -606,7 +610,9 @@ export default function OpportunitiesManager() {
       `}</style>
     </div>
   );
-}
+});
+
+export default OpportunitiesManager;
 
 // ── Table Row ─────────────────────────────────────────────────────────────────
 function OppRow({ row, isLast, onEdit, onDelete, onToggleActive }) {

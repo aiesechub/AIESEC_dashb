@@ -1,6 +1,6 @@
 // src/admin/pages/EventsManager.jsx
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import {
   getAllEvents, createEvent, updateEvent,
@@ -1315,13 +1315,18 @@ function ViewAllModal({ events, featuredIds, onClose, onEdit, onToggleActive, on
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export default function EventsManager() {
+const EventsManager = forwardRef(function EventsManager(props, ref) {
   const [events,      setEvents]      = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [editing,     setEditing]     = useState(null);
   const [isSaving,    setIsSaving]    = useState(false);
   const [toast,       setToast]       = useState(null);
   const [viewAllOpen, setViewAllOpen] = useState(false);
+  const [libraryVisible, setLibraryVisible] = useState(true);
+
+  useImperativeHandle(ref, () => ({
+    add: () => setEditing({ ...EMPTY_EVENT, display_order: events.length + 1 })
+  }), [events.length]);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -1467,6 +1472,13 @@ export default function EventsManager() {
             onMouseLeave={e => e.currentTarget.style.filter = 'brightness(1)'}>
             <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Add Event
           </button>
+
+          {/* Toggle Library */}
+          <button onClick={() => setLibraryVisible(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 18px', background: 'transparent', border: 'none', borderLeft: `1px solid rgba(255,255,255,0.08)`, fontFamily: F.rounded, fontWeight: 700, fontSize: 11, color: 'rgba(255,255,255,0.45)', cursor: 'pointer', transition: 'all .15s', flexShrink: 0 }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'white'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.45)'; }}>
+            {libraryVisible ? '📁' : '👁️'} {libraryVisible ? 'Hide' : 'Show'} Library
+          </button>
         </div>
         <FiestaStripe height={4} />
       </div>
@@ -1539,13 +1551,13 @@ export default function EventsManager() {
           )}
         </div>
 
-        <PhotoLibrary events={events} featuredIds={featuredIds}
+        {libraryVisible && <PhotoLibrary events={events} featuredIds={featuredIds}
           onEdit={e => setEditing({ ...e })}
           onToggleActive={handleToggleActive}
           onToggleFeatured={handleToggleFeatured}
           onDelete={handleDelete}
           onOpenViewAll={() => setViewAllOpen(true)}
-        />
+        />}
       </div>
 
       {toast && <Toast msg={toast.msg} type={toast.type} />}
@@ -1556,4 +1568,6 @@ export default function EventsManager() {
       `}</style>
     </div>
   );
-}
+});
+
+export default EventsManager;

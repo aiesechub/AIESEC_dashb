@@ -1,4 +1,4 @@
-// src/admin/AdminAuthWrapper.jsx
+// src/AdminAuthWrapper.jsx
 // Protected wrapper for admin routes with security checks
 // OWASP: A01 (Broken Access Control), A07 (Authentication Failures)
 
