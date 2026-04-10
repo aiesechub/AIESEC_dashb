@@ -143,93 +143,6 @@ export function setupSessionSecurity() {
 }
 
 // ============================================================================
-// AUDIT LOGGING
-// ============================================================================
-
-/**
- * Log audit event to database
- * OWASP A09: Logging & Monitoring Failures
- */
-export async function logAuditEvent({
-  action,
-  tableName,
-  recordId = null,
-  oldValues = null,
-  newValues = null,
-  metadata = {},
-}) {
-  try {
-    const { data: session } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
-    const userEmail = session?.user?.email;
-
-    // Build audit log entry
-    const auditEntry = {
-      user_id: userId,
-      user_email: userEmail,
-      action,
-      table_name: tableName,
-      record_id: recordId,
-      old_values: oldValues ? JSON.stringify(oldValues) : null,
-      new_values: newValues ? JSON.stringify(newValues) : null,
-    };
-
-    // Insert into audit_logs table
-    const { error } = await supabase
-      .from('audit_logs')
-      .insert([auditEntry]);
-
-    if (error) {
-      console.error('Failed to write audit log:', error);
-      // Don't throw - audit failures shouldn't break functionality
-    }
-  } catch (err) {
-    console.error('Audit logging error:', err);
-  }
-}
-
-/**
- * Log authentication event
- * OWASP A07: Authentication Failures
- */
-export async function logAuthEvent(email, eventType, success, reason = null) {
-  await logAuditEvent({
-    action: eventType,
-    tableName: 'auth_events',
-    metadata: {
-      email,
-      success,
-      reason,
-      timestamp: new Date().toISOString(),
-    },
-  });
-}
-
-/**
- * Log failed login attempt
- * OWASP A07: Authentication Failures
- */
-export async function logFailedLogin(email) {
-  const { allowed, retryAfter } = checkRateLimit(email, 'LOGIN_ATTEMPTS');
-
-  if (!allowed) {
-    // Account temporarily locked
-    await logAuditEvent({
-      action: 'LOGIN_RATE_LIMITED',
-      tableName: 'auth_events',
-      metadata: {
-        email,
-        retryAfter,
-      },
-    });
-    return { locked: true, retryAfter };
-  }
-
-  await logAuthEvent(email, 'LOGIN_FAILED', false, 'Invalid credentials');
-  return { locked: false };
-}
-
-// ============================================================================
 // SECURITY HEADERS
 // ============================================================================
 
@@ -333,7 +246,6 @@ export async function verifyUserCredentials(email, password) {
     });
 
     if (error) {
-      await logFailedLogin(email);
       return {
         success: false,
         error: 'Invalid email or password',
@@ -341,8 +253,6 @@ export async function verifyUserCredentials(email, password) {
     }
 
     // Success
-    await logAuthEvent(email, 'LOGIN_SUCCESS', true);
-
     return {
       success: true,
       session: data.session,
@@ -396,9 +306,6 @@ export function secureRemove(key) {
 export default {
   checkRateLimit,
   setupSessionSecurity,
-  logAuditEvent,
-  logAuthEvent,
-  logFailedLogin,
   setupSecurityHeaders,
   verifyAdminRole,
   verifyUserCredentials,
